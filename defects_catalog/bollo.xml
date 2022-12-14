@@ -1,0 +1,15 @@
+<Bollo>
+
+       <posxyz>[35 25 0]</posxyz>
+
+       <longitud>60</longitud>
+
+       <profundidad>5</profundidad>
+
+       <ancho>7</ancho>
+
+      <normal>[0 1 0]</normal>
+
+      <direccion_deg>0</direccion_deg>
+
+</Bollo>

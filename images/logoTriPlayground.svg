@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="78.234085mm"
+   height="71.815468mm"
+   viewBox="0 0 78.234085 71.815468"
+   version="1.1"
+   id="svg8"
+   inkscape:export-filename="/home/sara/Descargas/logoTriPlayground.png"
+   inkscape:export-xdpi="324.67001"
+   inkscape:export-ydpi="324.67001"
+   inkscape:version="1.0.2 (1.0.2+r75+1)"
+   sodipodi:docname="logoTriPlayground.svg">
+  <defs
+     id="defs2" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="1"
+     inkscape:cx="146.7049"
+     inkscape:cy="64.547711"
+     inkscape:document-units="mm"
+     inkscape:current-layer="layer1"
+     inkscape:document-rotation="0"
+     showgrid="false"
+     showguides="true"
+     inkscape:guide-bbox="true"
+     inkscape:window-width="1134"
+     inkscape:window-height="750"
+     inkscape:window-x="217"
+     inkscape:window-y="126"
+     inkscape:window-maximized="0" />
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-79.374996,-137.96131)">
+    <g
+       id="g883">
+      <path
+         style="fill:#8f0000;fill-opacity:1;stroke:none;stroke-width:0.234331px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         d="m 87.23957,140.58966 20.66122,11.98676 v 54.99807 L 87.23957,193.82498 Z"
+         id="path871" />
+      <path
+         style="fill:#c70000;fill-opacity:1;stroke:none;stroke-width:0.234331px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         d="M 107.9,152.57642 153.03095,200.61668 107.9,207.57449 Z"
+         id="path873"
+         sodipodi:nodetypes="cccc" />
+    </g>
+  </g>
+</svg>

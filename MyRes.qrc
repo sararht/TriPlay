@@ -1,0 +1,42 @@
+<RCC>
+    <qresource prefix="/MyRes">
+        <file>images/save-icon.png</file>
+        <file>images/Open-icon.png</file>
+        <file>images/setPoint.png</file>
+        <file>images/clear-point.png</file>
+        <file>images/sensorParams.png</file>
+        <file>images/profile.png</file>
+        <file>images/trajectory.png</file>
+        <file>images/colors.png</file>
+        <file>images/pointsWindow.png</file>
+        <file>images/home.png</file>
+        <file>images/insertDefect.png</file>
+        <file>images/trajectory_lectura.png</file>
+        <file>images/reset-view.png</file>
+        <file>images/axesX.png</file>
+        <file>images/axesX_.png</file>
+        <file>images/axesY.png</file>
+        <file>images/axesY_.png</file>
+        <file>images/axesZ.png</file>
+        <file>images/axesZ_.png</file>
+        <file>images/points.png</file>
+        <file>images/surface.png</file>
+        <file>images/wireframe.png</file>
+        <file>images/selection.png</file>
+        <file>images/drag.png</file>
+        <file>images/loading.gif</file>
+        <file>images/logoTriPlayground.png</file>
+        <file>images/logoTriPlayground.svg</file>
+        <file>defects_catalog/images/Bump.jpg</file>
+        <file>defects_catalog/images/Bump.png</file>
+        <file>defects_catalog/images/Crack.jpg</file>
+        <file>defects_catalog/images/Grieta1.jpg</file>
+        <file>defects_catalog/images/Grieta1.png</file>
+        <file>defects_catalog/images/Picadura1.jpg</file>
+        <file>defects_catalog/images/Picadura1.png</file>
+        <file>defects_catalog/images/Pick.jpg</file>
+        <file>images/insertDefectSelection.png</file>
+        <file>stl_examples/PUERTA_DELANTERA_IZQ_sub.stl</file>
+        <file>stl_examples/chapa2.stl</file>
+    </qresource>
+</RCC>
