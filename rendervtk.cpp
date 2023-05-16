@@ -455,6 +455,8 @@ void renderVTK::selectCellsOn()
 
         style->changeMode();
     }
+
+
 }
 
 void renderVTK::changeStyleMode(bool isDragMode)
