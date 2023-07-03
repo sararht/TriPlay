@@ -206,8 +206,14 @@ Defect* Defect::make_predefinedDefect(QString type, double depth_, float deg_rot
         for (int i=0; i<n_intermidiate_points+2;i++)
         {
             points.push_back(QVector3D(xm,ym,zm) + cte*QVector3D(distributionL[i],0,distributionW[i]));
+
         }
+
+        std::cout << "Width_max = " << width_cr << std::endl;
+        std::cout << "Width_selected = " << cte[2] << std::endl;
+
         return new CrackDefect(points,depth_,width_cr,QVector3D(0,1,0),30,30); //PARÁMETROS: N_COLUMNS_FIRST,LAST
+
 
 
     }

@@ -54,7 +54,7 @@ sensor::sensor(QVector3Dd origin_, QQuaternion q_,double working_range_, double 
     FOV = FOV_;
     uncertainty = uncertainty_;
 
-    x_fov = range*tan(FOV/2)*2;
+    x_fov = working_distance*tan(FOV/2)*2;
 
     rotMat = q.toRotationMatrix(); //CREO QUE ESTÁ MAL -->CON LA DE SCIPY ME IBA BIEN
 
@@ -81,7 +81,7 @@ sensor::sensor(QVector3Dd origin_, double roll_, double pitch_, double yaw_,doub
     FOV = FOV_;
     uncertainty = uncertainty_;
 
-    x_fov = range*tan(FOV/2)*2;
+    x_fov = working_distance*tan(FOV/2)*2;
 
     q = QQuaternion::fromEulerAngles(pitch, yaw, roll);
     rotMat = q.toRotationMatrix(); //CREO QUE ESTÁ MAL -->CON LA DE SCIPY ME IBA BIEN
@@ -517,6 +517,6 @@ void sensor::updateCaracteristicsSensor(double w_range_, double w_distance_, dou
     FOV = FOV_;
     resolution = resolution_;
 
-    x_fov = range*tan(FOV/2)*2;
+    x_fov = w_distance_*tan(FOV/2)*2;
 
 }

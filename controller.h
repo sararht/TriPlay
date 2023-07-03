@@ -7,6 +7,7 @@
 #include "trajectorycontroller.h"
 #include "rendervtk.h"
 #include "cv_perlin_noise/PerlinNoise.h"
+#include <QtXml>
 
 #include<opencv2/opencv.hpp>
 
@@ -28,6 +29,9 @@ public:
     //bool updatePolydataModel(QString name_file);
     bool updatePolydataModel(vtkSmartPointer<vtkPolyData> poly);
 
+   // void trajectoryGenerator4(GenTraj_options opt, QVector<trajectoryNode> nodes, QVector3D normal_plane_, double vel, double frames, double FOV, double resolution, double w_range, double w_distance, double uncertainty, KDNode tree, QString path)
+
+
 
 private:
     bool cancelling = false;
@@ -42,7 +46,8 @@ private slots:
     void insertDefectSelection(QString file_defect, QString file_model, QString file_saving, vtkSmartPointer<vtkPolyData> polydata);
     void insertDefectSelectionPredefined(QString file_model, QString file_saving, vtkSmartPointer<vtkPolyData> polydata, QString type, double depth, float deg_rot, QString personalized_type, crackDef_params* params);
     void trajectoryGenerator(GenTraj_options,QVector<trajectoryNode>,QVector3D,double,double,double,double,double,double,double,KDNode, QString);
-    void trajectoryGenerator2(GenTraj_options,QVector<trajectoryNode>,QVector3D,double,double,double,double,double,double,double,KDNode, QString);
+    //void trajectoryGenerator2(GenTraj_options,QVector<trajectoryNode>,QVector3D,double,double,double,double,double,double,double,KDNode, QString);
+    void trajectoryGenerator4(GenTraj_options,QVector<trajectoryNode>,QVector3D,double,double,double,double,double,double,double,KDNode, QString);
 
     void scanAllPiece(int n_steps, KDNode tree, double vel, double frames, double FOV, double resolution, double w_range, double w_distance, double uncertainty, QString path);
     void updateDragMode(bool checked, renderVTK renderer_vtk);

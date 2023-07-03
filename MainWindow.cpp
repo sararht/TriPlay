@@ -400,7 +400,7 @@ MainWindow::MainWindow(QWidget *parent)
     //BUILD SENSOR-------------------------------------------------------
     //Parámetros sensor
     double pi=3.141592;
-    double alpha = 63.5*pi/180;
+    double alpha = 61.5*pi/180;
     double w_distance = 400;
     double w_range = 300;
    // double alcance = w_distance+w_range/2;
@@ -463,7 +463,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(&controller_,SIGNAL(endTrajFrom()),this, SLOT(clearTrajRender()));
 
     connect(this,SIGNAL(button_traj_node_clicked(QVector<trajectoryNode>,double,double,double,double,double,double,double,KDNode, QString, bool)), &controller_, SLOT(getTrajectoryNodes(QVector<trajectoryNode>,double,double,double,double,double,double,double,KDNode, QString, bool)));
-    connect(this,SIGNAL(button_traj_generator_clicked(GenTraj_options,QVector<trajectoryNode>,QVector3D,double,double,double,double,double,double,double,KDNode, QString)), &controller_, SLOT(trajectoryGenerator(GenTraj_options,QVector<trajectoryNode>,QVector3D,double,double,double,double,double,double,double,KDNode, QString)));
+    connect(this,SIGNAL(button_traj_generator_clicked(GenTraj_options,QVector<trajectoryNode>,QVector3D,double,double,double,double,double,double,double,KDNode, QString)), &controller_, SLOT(trajectoryGenerator4(GenTraj_options,QVector<trajectoryNode>,QVector3D,double,double,double,double,double,double,double,KDNode, QString))); //AQUIII
 
     connect(this,SIGNAL(button_traj_node_from_clicked(QVector<QVector3Dd>,QVector<QVector3Dd>,double,double,double,double,double,KDNode, QString)), &controller_, SLOT(getTrajectoryNodesFromFile(QVector<QVector3Dd>,QVector<QVector3Dd>,double,double,double,double,double,KDNode, QString)));
 
@@ -493,6 +493,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     //Accept drops
     this->setAcceptDrops(true);
+
+    //controller_.trajectoryGenerator4();
 
 }
 
@@ -543,9 +545,11 @@ void MainWindow::frameDoneTrajUpdate(QVector<trajectoryNode> nodes, QVector<int>
         ui->button_stop->hide();
     }
 
+
     if(id_node>0)
     {
-        frame= frame - id_node*vFrames[id_node-1];
+        for (int i=id_node; i>0; i--)
+            frame= frame - vFrames[i-1];
     }
 
     QVector3Dd pos_ini = nodes[id_node].pos();
@@ -558,6 +562,7 @@ void MainWindow::frameDoneTrajUpdate(QVector<trajectoryNode> nodes, QVector<int>
     double pos_x = pos_ini.x() + frame*cte_x;
     double pos_y = pos_ini.y() + frame*cte_y;
     double pos_z = pos_ini.z() + frame*cte_z;
+
     QQuaternion q_i;
 
     if (q_ini != q_end)
@@ -1123,7 +1128,6 @@ void MainWindow::on_actionGet_Trajectory_from_triggered()
         QDomDocument xmlBOM;
         QString suffix;
 
-
         QString path_loadTraj = QFileDialog::getOpenFileName(this, "Load Trajectory", QDir::homePath(),"XML Files (*.xml *.si *.txt)");
         if (!path_loadTraj.isEmpty() && !path_loadTraj.isNull())
         {
@@ -1178,6 +1182,7 @@ void MainWindow::on_actionGet_Trajectory_from_triggered()
 
                 }
 
+
                 if (Component.tagName()=="RPYdata")
                 {
                     QDomElement Component2=Component.firstChild().toElement();
@@ -1196,6 +1201,7 @@ void MainWindow::on_actionGet_Trajectory_from_triggered()
                 Component = Component.nextSibling().toElement();
 
             }
+
 
             // int frames = pos_dataTraj.size();
              double fov = ui->fovSpinBox->value();
@@ -1343,11 +1349,12 @@ void MainWindow::on_actionTrajectory_Generator_triggered()
 
         auto bbox_general = tree.bbox;
         auto dim = bbox_general.maxPos - bbox_general.minPos;
-        double width_sensor = sensor_model.x_fov-300;
-        //int n_traj;
-         int n_traj = 7;
+        double X_FOV = sensor_model.x_fov;
+        double dist_solape = X_FOV/4;
+        double width_sensor = X_FOV - dist_solape;
+        int n_traj;
 
-         QVector3D normal_plane;
+        QVector3D normal_plane;
 
         if (XZ_x || XZ_z)
         {
@@ -1356,6 +1363,11 @@ void MainWindow::on_actionTrajectory_Generator_triggered()
             if (XZ_z)
             {
                 n_traj = ceil(abs(dim.x())/(width_sensor));
+                std::cout << "Dims: " << dim.x() << std::endl;
+                std::cout << "n_traj: " << n_traj << std::endl;
+                std::cout << "width_sensor: " << width_sensor << std::endl;
+
+
                 for (int i=0; i<n_traj; i++)
                 {
                     double pos_x = ((bbox_general.minPos.x()+width_sensor/2)+i*width_sensor);
@@ -1492,6 +1504,8 @@ void MainWindow::on_actionTrajectory_Generator_triggered()
         }
 
        //---
+
+
 
         GenTraj_options opt;
         if (b_opt1->isChecked())

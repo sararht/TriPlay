@@ -352,6 +352,8 @@ void saveTraj(QString path, QString file_name, QVector<QVector3Dd> pos_data, QVe
 
 void controller::getTrajectoryNodesFromFile(QVector<QVector3Dd> pos_dataTraj,QVector<QVector3Dd> rpy_dataTraj,double fov,double resolution,double w_range, double w_distance,double uncertainty,KDNode tree, QString path)
 {
+
+    std::cout <<"HEY"<<std::endl;
     if (pos_dataTraj.size()<2)
     {
         //EMIT ui->listWidget->addItem("PUNTOS INSUFICIENTES");
@@ -382,6 +384,10 @@ void controller::getTrajectoryNodesFromFile(QVector<QVector3Dd> pos_dataTraj,QVe
         for (int j=0; j<1; j++)
         {
 
+            cv::Mat raw(pos_dataTraj.size(), resolution, CV_64FC1);
+            cv::Mat raw_error(pos_dataTraj.size(), resolution, CV_64FC1);
+            cv::Mat raw_luminosidad = cv::Mat::zeros(pos_dataTraj.size(), resolution, CV_64FC1);
+
             //QVector3Dd pos_ini = pos_dataTraj[0];
             //QVector3Dd pos_end = pos_dataTraj[pos_dataTraj.size()-1];
           //  QQuaternion q_ini = nodes[j].q();
@@ -392,6 +398,8 @@ void controller::getTrajectoryNodesFromFile(QVector<QVector3Dd> pos_dataTraj,QVe
             QVector<QVector<QVector3Dd>> total_data_sensor_error(pos_dataTraj.size());
             QVector<QVector<QVector3Dd>> total_points_real(pos_dataTraj.size());
             QVector<QVector<QVector3Dd>> total_points_real_error(pos_dataTraj.size());
+
+            std::cout <<"HEY2"<<std::endl;
 
 
             clock_t tStart_ = clock();
@@ -410,24 +418,40 @@ void controller::getTrajectoryNodesFromFile(QVector<QVector3Dd> pos_dataTraj,QVe
             total_data_sensor_error[i] = (new_sensor_model.sensor_data_error);
             total_points_real_error[i] =  (new_sensor_model.sensor_data_points_real_error);
 
+            for(int r=0;r<resolution;r++)
+            {
+                raw.at<double>(i,r)=total_data_sensor[i][r].z()*100;
+                raw_error.at<double>(i,r)=total_data_sensor_error[i][r].z()*100;
+
+                if (total_data_sensor_error[i][r].z() != 0)
+                    raw_luminosidad.at<double>(i,r)=1;
+            }
+
+
             emit frameDone(i, pos_dataTraj.size(),new_sensor_model);
             }
 
 
             //SAVE DATA
-            std::stringstream name, name2, name3, name4;
+            std::stringstream name, name2, name3, name4, name_raw_error, name_raw_luminosidad;
            // time_t now = time(0);
             //path << "../resultados/" << std::ctime(&now);
             name << "/step" << 0 << ".txt";
             name2 << "/step_real" << 0 << ".txt";
             name3 << "/step_error" << 0 << ".txt";
             name4 << "/step_real_error" << 0 << ".txt";
+            name_raw_error << path.toStdString() << "/step_" << std::setw(2) << std::setfill('0') << j << "_orig.raw";
+            name_raw_luminosidad << path.toStdString() << "/step_" << std::setw(2) << std::setfill('0') << j << "_luminosidad.raw";
+
 
 
             saveData(path, QString::fromStdString(name.str()),total_data_sensor);
             saveData(path, QString::fromStdString(name2.str()),total_points_real);
             saveData(path, QString::fromStdString(name3.str()),total_data_sensor_error);
             saveData(path, QString::fromStdString(name4.str()),total_points_real_error);
+
+            writeMatRaw(QString::fromStdString(name_raw_error.str()),'w',raw_error);
+            writeMatRaw(QString::fromStdString(name_raw_luminosidad.str()),'w',raw_luminosidad*20);
 
 
            // saveData(name.str(), total_data_sensor);
@@ -504,7 +528,6 @@ void controller::getTrajectoryNodes(QVector<trajectoryNode> nodes, double vel, d
             QQuaternion q_ini = nodes[j].q();
             QQuaternion q_end = nodes[j+1].q();
 
-
             double cte_x= (pos_end.x() - pos_ini.x()) / vFrames[j] ;
             double cte_y= (pos_end.y() - pos_ini.y()) / vFrames[j] ;
             double cte_z= (pos_end.z() - pos_ini.z()) / vFrames[j] ;
@@ -515,6 +538,8 @@ void controller::getTrajectoryNodes(QVector<trajectoryNode> nodes, double vel, d
             QVector<QVector<QVector3Dd>> total_points_real(vFrames[j]);
             QVector<QVector<QVector3Dd>> total_points_real_error(vFrames[j]);
             QVector<QVector<QVector3Dd>> normal_data_sensor(vFrames[j]);
+            QVector<QVector3Dd> pos_sensor_buena(vFrames[j]);
+            QVector<QVector3Dd> rpy_sensor_buena(vFrames[j]);
 
 
 
@@ -581,7 +606,7 @@ void controller::getTrajectoryNodes(QVector<trajectoryNode> nodes, double vel, d
                     total_data_sensor_error[i] = (new_sensor_model.sensor_data_error);
                     total_points_real_error[i] =  (new_sensor_model.sensor_data_points_real_error);
                     normal_data_sensor[i] = (new_sensor_model.normal_data);
-
+                    pos_sensor_buena[i] = QVector3Dd(pos_x, pos_y, pos_z);
 
                     if(i==0)
                     {
@@ -632,13 +657,13 @@ void controller::getTrajectoryNodes(QVector<trajectoryNode> nodes, double vel, d
             saveData(path, QString::fromStdString(name.str()),total_data_sensor);
             saveData(path, QString::fromStdString(name2.str()),total_points_real);
             saveData(path, QString::fromStdString(name3.str()),total_data_sensor_error);
-           // saveData(path, QString::fromStdString(name4.str()),total_points_real_error);
-           // saveData(path, QString::fromStdString(name5.str()),normal_data_sensor);
-           // saveTraj(path, QString::fromStdString(name_traj.str()),pos_sensor,rpy_sensor);
+            saveData(path, QString::fromStdString(name4.str()),total_points_real_error);
+            saveData(path, QString::fromStdString(name5.str()),normal_data_sensor);
+            saveTraj(path, QString::fromStdString(name_traj.str()),pos_sensor_buena,rpy_sensor_buena);
 
 
             //Guardar traj
-            saveTraj(path, QString::fromStdString(name_traj_simple.str()),pos_sensor,rpy_sensor,false);
+            saveTraj(path, QString::fromStdString(name_traj_simple.str()),pos_sensor_buena,rpy_sensor_buena,false);
 //            writeMatRaw(QString::fromStdString(name_raw.str()),'w',raw);
 
             writeMatRaw(QString::fromStdString(name_raw_error.str()),'w',raw_error);
@@ -920,6 +945,199 @@ void controller::scanAllPiece(int n_steps, KDNode tree, double vel, double frame
 
 }
 
+static QVector<float> fromString(QString &str)
+{
+    str.replace("[", "");
+    str.replace("]", "");
+    str.replace(",", " ");
+    str.replace(",", " ");
+
+    QVector<float> vector;
+    QStringList list = str.split(' ');
+    for (int i=0; i<list.size(); i++)
+    {
+        QString numberGroup = list.at(i);
+        vector.push_back(numberGroup.toFloat());
+    }
+
+    return vector;
+}
+static QVector<float> fromString2(QString &str)
+{
+    str.replace("[", "");
+    str.replace("]", "");
+    str.replace(",", "");
+    str.replace(",", "");
+
+    QVector<float> vector;
+    QStringList list = str.split(' ');
+    for (int i=0; i<list.size(); i++)
+    {
+        QString numberGroup = list.at(i);
+        vector.push_back(numberGroup.toFloat());
+    }
+
+    return vector;
+}
+void controller::trajectoryGenerator4(GenTraj_options opt, QVector<trajectoryNode> nodes, QVector3D normal_plane_, double vel, double frames, double FOV, double resolution, double w_range, double w_distance, double uncertainty, KDNode tree, QString path)
+{
+
+    if (nodes.size()<2)
+    {
+        //EMIT ui->listWidget->addItem("PUNTOS INSUFICIENTES");
+    }
+
+    else
+    {
+        double working_distance = w_distance;
+        switch(opt)
+        {
+            case optMinRange:
+                working_distance = w_distance-w_range/2;
+            break;
+            case optWDist:
+                working_distance = w_distance;
+            break;
+            case optMaxRange:
+                working_distance = w_distance+w_range/2;
+            break;
+        }
+        int frames_i=0;
+        int frames_totales = frames*nodes.size();
+
+        getTrajectoryNodes(nodes,vel,frames,FOV,resolution,w_range,w_distance,uncertainty,tree,path,false);
+    }
+
+    /*
+    QVector<QVector3Dd> pos_sensor;
+    QVector<QVector3Dd> rpy_sensor;
+    QVector<QVector3Dd> points;
+    QVector<QVector3Dd> normals;
+    QVector<QVector3Dd> measurements;
+    int points_per_profile = 4095;
+    double working_distance = 270;
+
+    //Traj sensor
+    QFile file("/home/sara/Descargas/puerta_limpia2/traj_sensor00.xml");
+    QDomDocument xmlBOM;
+    if (!file.open(QIODevice::ReadOnly )){qWarning("Error while loading file"); return;}
+    else{xmlBOM.setContent(&file);}
+    QDomElement root = xmlBOM.documentElement();
+    QDomElement Component=root.firstChild().toElement();
+    if (Component.tagName()=="POSITION")
+    {
+        QDomElement Component2=Component.firstChild().toElement();
+        while (Component2.tagName()=="XYZ")
+        {
+            QString values =Component2.firstChild().toText().data();
+            QVector<float> v_f = fromString2(values);
+
+            QVector3Dd posxyz_ = QVector3Dd(v_f[0], v_f[1], v_f[2]);
+            pos_sensor.push_back(posxyz_);
+            Component2 = Component2.nextSibling().toElement();
+
+        }
+
+    }
+    Component = Component.nextSibling().toElement();
+    if (Component.tagName()=="RPYdata")
+    {
+        QDomElement Component2=Component.firstChild().toElement();
+        while (Component2.tagName()=="RPY")
+        {
+            QString values =Component2.firstChild().toText().data();
+            QVector<float> v_f = fromString2(values);
+
+           // QVector3Dd rpy_ = QVector3Dd(v_f[0], v_f[1], v_f[2]);
+            QVector3Dd rpy_ = QVector3Dd(0,90,-3.5);
+
+            rpy_sensor.push_back(rpy_);
+            Component2 = Component2.nextSibling().toElement();
+        }
+
+    }
+
+    // Puntos
+    QFile file1("/home/sara/Descargas/puerta_limpia2/step_00_real.txt");
+    if (!file1.open(QIODevice::ReadOnly )){qWarning("Error while loading file"); return;}
+    while(!file1.atEnd())
+    {
+        QString line = file1.readLine();
+        QVector<float> v_f = fromString(line);
+        QVector3Dd points_ = QVector3Dd(v_f[0], v_f[1], v_f[2]);
+        points.push_back(points_);
+    }
+
+    // Normales
+    QFile file2("/home/sara/Descargas/puerta_limpia2/normal_data00.txt");
+    if (!file2.open(QIODevice::ReadOnly )){qWarning("Error while loading file"); return;}
+    while(!file2.atEnd())
+    {
+        QString line = file2.readLine();
+        QVector<float> v_f = fromString(line);
+        QVector3Dd normals_ = QVector3Dd(v_f[0], v_f[1], v_f[2]);
+        normals.push_back(normals_);
+    }
+
+    // Medidas
+    QFile file3("/home/sara/Descargas/puerta_limpia2/step_error00.txt");
+    if (!file3.open(QIODevice::ReadOnly )){qWarning("Error while loading file"); return;}
+    while(!file3.atEnd())
+    {
+        QString line = file3.readLine();
+        QVector<float> v_f = fromString(line);
+        QVector3Dd measurements_ = QVector3Dd(v_f[0], v_f[1], v_f[2]);
+        measurements.push_back(measurements_);
+
+    }
+
+    QVector<QVector3Dd> new_sensor_position;
+    QVector<QVector3Dd> new_sensor_orientation;
+
+    new_sensor_position = pos_sensor;
+    for(int p=0; p<pos_sensor.size(); p++)
+    {
+        QVector<QVector3Dd> points_p = points.mid(points_per_profile*p, 4095);
+        QVector<QVector3Dd> normals_p = normals.mid(points_per_profile*p, 4095);
+        QVector<QVector3Dd> measurements_p = measurements.mid(points_per_profile*p, 4095);
+
+        double mean_z= -1; int n_m=0;
+        for (QVector3Dd m : measurements_p){
+            if(m.z()!=0){
+                mean_z += m.z();
+                n_m++;}
+        };
+        mean_z /= n_m;
+
+        double desf_wd = working_distance-mean_z;
+        new_sensor_position[p].setY(new_sensor_position[p].y() + desf_wd);
+
+        std::cout << "Mean Z 0: " <<  pos_sensor[p].x() << std::endl;
+        std::cout << "Mean Z 1: " <<  pos_sensor[p].y() << std::endl;
+        std::cout << "Mean Z 2: " <<  pos_sensor[p].z() << std::endl;
+
+      //   std::cout << "Mean Z: " << pos_sensor[p].y() << std::endl;
+     //   std::cout << "Desfase: " << desf_wd << std::endl;
+
+    }
+
+
+    new_sensor_orientation = rpy_sensor;
+    saveTraj("/home/sara/Descargas/puerta_limpia2/nueva",
+             "/step_00_traj_nueva.xml",new_sensor_position, new_sensor_orientation); //new_rpy_sensor_orientation
+
+    std::cout << "LISTO" << std::endl;
+
+
+//std::cout << "Size Pos sensor: " << pos_sensor.size() << std::endl;
+//std::cout << "Size RPY sensor: " << rpy_sensor.size() << std::endl;
+//std::cout << "Size POINTS: " << points_p.size() << std::endl;
+//std::cout << "Size NORMALS: " << normals_p.size() << std::endl;
+//std::cout << "Size MEASUREMENTS: " << measurements_p.size() << std::endl;
+
+    */
+
+}
 
 
 void controller::trajectoryGenerator(GenTraj_options opt, QVector<trajectoryNode> nodes, QVector3D normal_plane_, double vel, double frames, double FOV, double resolution, double w_range, double w_distance, double uncertainty, KDNode tree, QString path)
@@ -1101,7 +1319,7 @@ void controller::trajectoryGenerator(GenTraj_options opt, QVector<trajectoryNode
                         if (values[0]==0 && values[1]==0 && values[2]==0)
                           continue;
 
-                        if (values[0]>-0.001 && values[0]<0.001 && values[1]>-0.001 && values[1]<0.001 /*&& values[2]==0*/)
+                        if (values[0]>-0.001 && values[0]<0.001 && values[1]>-0.001 && values[1]<0.001 )
                           continue;
 
                    //     std::cout << "NORMALS: " << values[0] << ", " << values[1] << ", " << values[2] << std::endl;
@@ -1311,7 +1529,7 @@ void controller::trajectoryGenerator(GenTraj_options opt, QVector<trajectoryNode
 
     }
 }
-
+/*
 void controller::trajectoryGenerator2(GenTraj_options opt, QVector<trajectoryNode> nodes, QVector3D normal_plane_, double vel, double frames, double FOV, double resolution, double w_range, double w_distance, double uncertainty, KDNode tree, QString path)
 {
     if (nodes.size()<2)
@@ -1530,18 +1748,18 @@ void controller::trajectoryGenerator2(GenTraj_options opt, QVector<trajectoryNod
 
                             angle = -angle;
                             desf_length = -desf_length;
-                            desf_height = /*desf_height + */desf_wd; //----------------comentar desf_height
+                            desf_height = desf_wd; //----------------comentar desf_height
                             angle_max =angle; //------------------ comentar linea
 
                         }
 
                         else //Bajando
                         {
-                            new_orientation = old_orientation + normal_plane*angle;/* QVector3Dd(angle*normal_plane.x(),angle*normal_plane.y(),angle*normal_plane.z())*/;
+                            new_orientation = old_orientation + normal_plane*angle;
 
                             angle = +angle;
                             desf_length = +desf_length;
-                            desf_height = /*-desf_height*/ + desf_wd; //-----------------comentar desf_height
+                            desf_height =  + desf_wd; //-----------------comentar desf_height
                             angle_max =angle; //------------------ comentar linea
 
 
@@ -1800,7 +2018,7 @@ void controller::trajectoryGenerator2(GenTraj_options opt, QVector<trajectoryNod
 
     }
 }
-
+*/
 void controller::updateDragMode(bool checked, renderVTK renderer_vtk)
 {
     while(checked)
