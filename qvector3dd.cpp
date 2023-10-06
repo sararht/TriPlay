@@ -1,6 +1,7 @@
 #include "qvector3dd.h"
 #include <string>
 #include <math.h>
+#include <iostream>
 
 QVector3Dd::QVector3Dd()
 {
@@ -20,7 +21,7 @@ QVector3Dd QVector3Dd::operator+(const QVector3Dd &v2)
     return QVector3Dd(v[0] + v2.v[0], v[1] + v2.v[1], v[2] + v2.v[2]);
 }
 
-QVector3Dd QVector3Dd::operator-(const QVector3Dd &v2)
+QVector3Dd QVector3Dd::operator-(const QVector3Dd &v2) const
 {
     return QVector3Dd(v[0] - v2.v[0], v[1] - v2.v[1], v[2] - v2.v[2]);
 }
@@ -81,28 +82,39 @@ QVector3Dd QVector3Dd::abs()
 
 
 
-/*
+
 QVector3Dd &QVector3Dd::operator+=(const QVector3Dd &vector)
 {
-    v[0] += vector.v[0];
-    v[1] += vector.v[1];
-    v[2] += vector.v[2];
+    this->setX(this->x() + vector.x());
+    this->setY(this->y() + vector.y());
+    this->setZ(this->z() + vector.z());
+
     return *this;
 }
 
 QVector3Dd &QVector3Dd::operator-=(const QVector3Dd &vector)
 {
-   v[0] -= vector.v[0];
-   v[1] -= vector.v[1];
-   v[2] -= vector.v[2];
-   return *this;
+    this->setX(this->x() - vector.x());
+    this->setY(this->y() - vector.y());
+    this->setZ(this->z() - vector.z());
+    return *this;
 }
 
 QVector3Dd &QVector3Dd::operator/=(double divisor)
-{
-    v[0] /= divisor;
-    v[1] /= divisor;
-    v[2] /= divisor;
+{    
+    this->setX(this->x() / divisor);
+    this->setY(this->y() / divisor);
+    this->setZ(this->z() / divisor);
+
     return *this;
 }
-*/
+
+QVector3Dd &QVector3Dd::operator*=(const QVector3Dd &vector)
+{
+    this->setX(this->x() * vector.x());
+    this->setY(this->y() * vector.y());
+    this->setZ(this->z() * vector.z());
+
+    return *this;
+}
+

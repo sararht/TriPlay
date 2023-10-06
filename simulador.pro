@@ -71,7 +71,8 @@ SOURCES += \
     vtktools.cpp \
     rendervtk.cpp \
     defectselection.cpp \
-    cv_perlin_noise/PerlinNoise.cpp
+    cv_perlin_noise/PerlinNoise.cpp \
+    bspline3d.cpp
 
 HEADERS += \
     KD_tree_cpp/boundingbox.h \
@@ -102,7 +103,8 @@ HEADERS += \
     mouseinteractorstyle.h \
     defectselection.h \
     draginteractorstyle.h \
-    cv_perlin_noise/PerlinNoise.h
+    cv_perlin_noise/PerlinNoise.h \
+    bspline3d.h
 
 FORMS += \
     MainWindow.ui \

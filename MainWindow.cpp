@@ -302,6 +302,7 @@ void MainWindow::wdgScanAllParams()
 }
 
 
+#include<vtkVersion.h>
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -332,6 +333,12 @@ MainWindow::MainWindow(QWidget *parent)
     ui->button_refresh->setVisible(false);
     ui->listWidget->setVisible(false);
     ui->label_lW->setVisible(false);
+
+
+    /// VTK VERSION
+    std::cout << "VTK Version: " << vtkVersion::GetVTKVersion() << std::endl;
+
+
 
 
     QVector3Dd A(0,0,0);
@@ -1359,7 +1366,9 @@ void MainWindow::on_actionTrajectory_Generator_triggered()
         if (XZ_x || XZ_z)
         {
             normal_plane = QVector3D(0,1,0);
-            double y_pos = (width_sensor/2)/tan(sensor_model.FOV/2);
+//            double y_pos = (width_sensor/2)/tan(sensor_model.FOV/2);
+            double y_pos = sensor_model.working_distance;
+
             if (XZ_z)
             {
                 n_traj = ceil(abs(dim.x())/(width_sensor));
@@ -1372,8 +1381,10 @@ void MainWindow::on_actionTrajectory_Generator_triggered()
                 {
                     double pos_x = ((bbox_general.minPos.x()+width_sensor/2)+i*width_sensor);
 
-                    QVector3Dd pos_ini(pos_x, bbox_general.maxPos.y()+y_pos, bbox_general.minPos.z()-10);
-                    QVector3Dd pos_end(pos_x, bbox_general.maxPos.y()+y_pos, bbox_general.maxPos.z()+10);
+//                    QVector3Dd pos_ini(pos_x, bbox_general.maxPos.y()+y_pos, bbox_general.minPos.z()-10);
+//                    QVector3Dd pos_end(pos_x, bbox_general.maxPos.y()+y_pos, bbox_general.maxPos.z()+10);
+                    QVector3Dd pos_ini(pos_x, bbox_general.minPos.y()+y_pos, bbox_general.minPos.z()-10);
+                    QVector3Dd pos_end(pos_x, bbox_general.minPos.y()+y_pos, bbox_general.maxPos.z()+10);
 
                     QQuaternion q = QQuaternion::fromEulerAngles(ui->pitchSpinBox->value(), ui->yawSpinBox->value(),ui->rollSpinBox->value());
 

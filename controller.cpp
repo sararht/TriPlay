@@ -24,6 +24,9 @@
 
 #include <opencv2/opencv.hpp>
 
+#include <eigen3/Eigen/Dense>
+
+#include "bspline3d.h"
 
 inline void printQVector3D(QVector3D v)
 {
@@ -394,6 +397,7 @@ void controller::getTrajectoryNodesFromFile(QVector<QVector3Dd> pos_dataTraj,QVe
           //  QQuaternion q_end = nodes[j+1].q();
 
             QVector<QVector<double>> distances_sensor(pos_dataTraj.size());
+            QVector<QVector<QVector3Dd>> normals(pos_dataTraj.size());
             QVector<QVector<QVector3Dd>> total_data_sensor(pos_dataTraj.size());
             QVector<QVector<QVector3Dd>> total_data_sensor_error(pos_dataTraj.size());
             QVector<QVector<QVector3Dd>> total_points_real(pos_dataTraj.size());
@@ -417,6 +421,7 @@ void controller::getTrajectoryNodesFromFile(QVector<QVector3Dd> pos_dataTraj,QVe
             total_points_real[i] = (new_sensor_model.sensor_data_points_real);
             total_data_sensor_error[i] = (new_sensor_model.sensor_data_error);
             total_points_real_error[i] =  (new_sensor_model.sensor_data_points_real_error);
+            normals[i] = new_sensor_model.normal_data;
 
             for(int r=0;r<resolution;r++)
             {
@@ -433,9 +438,10 @@ void controller::getTrajectoryNodesFromFile(QVector<QVector3Dd> pos_dataTraj,QVe
 
 
             //SAVE DATA
-            std::stringstream name, name2, name3, name4, name_raw_error, name_raw_luminosidad;
+            std::stringstream name, name2, name3, name4, name_raw_error, name_raw_luminosidad, nameN;
            // time_t now = time(0);
             //path << "../resultados/" << std::ctime(&now);
+            nameN << "/normals" << 0 << ".txt";
             name << "/step" << 0 << ".txt";
             name2 << "/step_real" << 0 << ".txt";
             name3 << "/step_error" << 0 << ".txt";
@@ -444,7 +450,7 @@ void controller::getTrajectoryNodesFromFile(QVector<QVector3Dd> pos_dataTraj,QVe
             name_raw_luminosidad << path.toStdString() << "/step_" << std::setw(2) << std::setfill('0') << j << "_luminosidad.raw";
 
 
-
+            saveData(path, QString::fromStdString(nameN.str()),normals);
             saveData(path, QString::fromStdString(name.str()),total_data_sensor);
             saveData(path, QString::fromStdString(name2.str()),total_points_real);
             saveData(path, QString::fromStdString(name3.str()),total_data_sensor_error);
@@ -979,6 +985,65 @@ static QVector<float> fromString2(QString &str)
 
     return vector;
 }
+
+
+
+void escribirEnArchivo(const QVector<double>& datos, const QString& nombreArchivo)
+{
+    QFile archivo(nombreArchivo);
+    if (archivo.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        QTextStream out(&archivo);
+        for (int i = 0; i < datos.size(); ++i)
+        {
+            out << datos[i] << '\n';
+        }
+        archivo.close();
+    }
+}
+
+// Función para calcular la matriz de base B-spline cúbica
+Eigen::Matrix4d ComputeBasisMatrix(double t) {
+    double t2 = t * t;
+    double t3 = t2 * t;
+    Eigen::Matrix4d basisMatrix;
+
+    basisMatrix << -1.0/6 * t3 + 0.5 * t2 - 0.5 * t + 1.0/6, 2.0/3 * t3 - t2 + 0.5, -1.0/2 * t3 + 0.5 * t2 + 0.5 * t + 1.0/2, -1.0/6 * t3,
+                     0.5 * t3 - t2 + 2.0/3, -t3 + 1.0, 0.5 * t3 - 2.0 * t2 + 2.0/3, 0.0,
+                     -0.5 * t3 + 0.5 * t2 + 0.5 * t + 1.0/2, 2.0/3 * t3 - 2.0 * t2 + 0.5, -t3 + t2 + t + 1.0/6, 0.0,
+                     1.0/6 * t3, 0.0, 0.0, 0.0;
+
+    return basisMatrix;
+}
+
+
+// Función para interpolar una trayectoria 3D con curvas B-spline
+QVector<QVector3D> InterpolateBSpline(const QVector<QVector3D>& controlPoints, int numPoints) {
+    int n = controlPoints.size() - 1;
+    QVector<QVector3D> interpolatedPath;
+
+    for (int i = 0; i < n - 2; ++i) {
+        for (int j = 0; j < numPoints; ++j) {
+            double t = static_cast<double>(j) / (numPoints - 1);
+            Eigen::Matrix4d basisMatrix = ComputeBasisMatrix(t);
+
+            QVector3D interpolatedPoint;
+            for (int k = 0; k < 4; ++k) {
+                double aux = basisMatrix(0, k);
+                interpolatedPoint +=  controlPoints[i + k] * aux;
+            }
+
+            interpolatedPath.push_back(interpolatedPoint);
+        }
+    }
+
+    return interpolatedPath;
+}
+
+
+
+
+
 void controller::trajectoryGenerator4(GenTraj_options opt, QVector<trajectoryNode> nodes, QVector3D normal_plane_, double vel, double frames, double FOV, double resolution, double w_range, double w_distance, double uncertainty, KDNode tree, QString path)
 {
 
@@ -1005,8 +1070,374 @@ void controller::trajectoryGenerator4(GenTraj_options opt, QVector<trajectoryNod
         int frames_i=0;
         int frames_totales = frames*nodes.size();
 
-        getTrajectoryNodes(nodes,vel,frames,FOV,resolution,w_range,w_distance,uncertainty,tree,path,false);
+       // getTrajectoryNodes(nodes,vel,frames,FOV,resolution,w_range,w_distance,uncertainty,tree,path,false);
+
+        QVector<QVector3Dd> pos_sensor;
+        QVector<QVector3Dd> rpy_sensor;
+        QVector<QVector3Dd> points;
+        QVector<QVector3Dd> normals;
+        QVector<QVector3Dd> measurements;
+        int points_per_profile = 4096;
+        //double working_distance = 270;
+
+
+        int id_string = 0;
+
+        //Traj sensor
+        std::string path = "/home/sara/Descargas/prueba/traj_sensor0" + std::to_string(id_string) +".xml";
+        QFile file(path.c_str());
+        QDomDocument xmlBOM;
+        if (!file.open(QIODevice::ReadOnly )){qWarning("Error while loading file"); return;}
+        else{xmlBOM.setContent(&file);}
+        QDomElement root = xmlBOM.documentElement();
+        QDomElement Component=root.firstChild().toElement();
+        if (Component.tagName()=="POSITION")
+        {
+            QDomElement Component2=Component.firstChild().toElement();
+            while (Component2.tagName()=="XYZ")
+            {
+                QString values =Component2.firstChild().toText().data();
+                QVector<float> v_f = fromString2(values);
+
+                QVector3Dd posxyz_ = QVector3Dd(v_f[0], v_f[1], v_f[2]);
+                pos_sensor.push_back(posxyz_);
+                Component2 = Component2.nextSibling().toElement();
+
+            }
+
+        }
+        Component = Component.nextSibling().toElement();
+        if (Component.tagName()=="RPYdata")
+        {
+            QDomElement Component2=Component.firstChild().toElement();
+            while (Component2.tagName()=="RPY")
+            {
+                QString values =Component2.firstChild().toText().data();
+                QVector<float> v_f = fromString2(values);
+
+               // QVector3Dd rpy_ = QVector3Dd(v_f[0], v_f[1], v_f[2]);
+                QVector3Dd rpy_ = QVector3Dd(0,90,-3.5);
+
+                rpy_sensor.push_back(rpy_);
+                Component2 = Component2.nextSibling().toElement();
+            }
+
+        }
+
+        // Puntos
+        std::string path_1 = "/home/sara/Descargas/prueba/step_0" + std::to_string(id_string) +"_real.txt";
+        QFile file1(path_1.c_str());
+        if (!file1.open(QIODevice::ReadOnly )){qWarning("Error while loading file"); return;}
+        while(!file1.atEnd())
+        {
+            QString line = file1.readLine();
+            QVector<float> v_f = fromString(line);
+            QVector3Dd points_ = QVector3Dd(v_f[0], v_f[1], v_f[2]);
+            points.push_back(points_);
+        }
+
+        // Normales
+        std::string path_2 = "/home/sara/Descargas/prueba/normal_data0" + std::to_string(id_string) +".txt";
+        QFile file2(path_2.c_str());
+        if (!file2.open(QIODevice::ReadOnly )){qWarning("Error while loading file"); return;}
+        while(!file2.atEnd())
+        {
+            QString line = file2.readLine();
+            QVector<float> v_f = fromString(line);
+            QVector3Dd normals_ = QVector3Dd(v_f[0], v_f[1], v_f[2]);
+            normals.push_back(normals_);
+        }
+
+        // Medidas
+        std::string path_3 = "/home/sara/Descargas/prueba/step_error0" + std::to_string(id_string) +".txt";
+        QFile file3(path_3.c_str());
+        if (!file3.open(QIODevice::ReadOnly )){qWarning("Error while loading file"); return;}
+        while(!file3.atEnd())
+        {
+            QString line = file3.readLine();
+            QVector<float> v_f = fromString(line);
+            QVector3Dd measurements_ = QVector3Dd(v_f[0], v_f[1], v_f[2]);
+            measurements.push_back(measurements_);
+
+        }
+
+        std::cout << "Datos cargados" << std::endl;
+
+        //-----------------------------------------------------------------------------------------------------------------
+
+        QVector<QVector3Dd> new_sensor_position;
+        QVector<QVector3Dd> new_sensor_orientation;
+        QVector<QVector3Dd> new_normals;
+
+
+
+
+        new_sensor_orientation = rpy_sensor;
+        new_sensor_position = pos_sensor;
+
+
+
+        QVector<int> ids_bad;
+
+        //Calcular posiciones ideales según orientación a la normal------------------------------------------------
+        for(int p=0; p<pos_sensor.size(); p++)
+        {
+            QVector<QVector3Dd> points_p = points.mid(points_per_profile*p, points_per_profile);
+            QVector<QVector3Dd> normals_p = normals.mid(points_per_profile*p, points_per_profile);
+            QVector<QVector3Dd> measurements_p = measurements.mid(points_per_profile*p, points_per_profile);
+
+            double mean_z= 0; int n_m=0;
+            for (QVector3Dd m : points_p){
+                if(m.z()!=0){
+                    mean_z += m.y();
+                    n_m++;
+                }
+            }
+
+            QVector3Dd mean_n(0,0,0); int n_n=0;
+            for (QVector3Dd m : normals_p){
+                if (m.length() == 0) continue;
+                mean_n += m;
+                n_n++;
+               // std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            }
+            mean_n /= n_n;
+            mean_z /= n_m;
+
+            double desf_wd = /*working_distance+*/mean_z;
+
+            if (n_m < points_per_profile/100)
+            {
+                desf_wd = -1;
+                ids_bad.push_back(p);
+            }
+
+            new_sensor_position[p].setY(desf_wd/*pos_sensor[p].y() + desf_wd*/);
+            new_sensor_orientation[p].setZ(-3.5);
+            new_normals.push_back(mean_n);
+        }
+
+        for(int p=ids_bad.size()-1; p>=0; p--)
+        {
+            new_sensor_position.remove(ids_bad[p]);
+            new_sensor_orientation.remove(ids_bad[p]);
+            new_normals.remove(ids_bad[p]);
+        }
+
+       // Calcular orientaciones ideales ---------------------------------------------------------------------------
+
+        QVector<int> ids_keypoints;
+        QVector3Dd n_dir(0,1,0);
+        QVector3Dd scan_dir(0,0,1);
+
+        //Calcular ángulos
+        QVector<double> angles_deg;
+
+        for(int p=0; p<new_sensor_position.size(); p++)
+        {
+           double dot_product = QVector3Dd::dotProduct(n_dir.normalized(),new_normals[p].normalized());
+           double angle=std::acos(dot_product);
+           double angle_degrees = (angle*(180.0 / M_PI));
+
+           if (QVector3Dd::dotProduct(scan_dir,new_normals[p]) < 0) //ESTO CAMBIARLO SEGÚN LA DIRECCIÓN DE ESCANEO!!
+           {
+               angle_degrees *= -1;
+           }
+           angles_deg.push_back(angle_degrees);
+        }
+
+       //  escribirEnArchivo(angles_deg, "/home/sara/Descargas/TRAJ/angles.txt");
+
+        // Seleccionar puntos clave ---------------------------------------------------------------------------
+
+        double ang_ref = angles_deg[1];
+        ids_keypoints.push_back(0);
+        double alpha = 20;
+        int nnn=0;
+        for(int p=1; p<angles_deg.size(); p++)
+        {
+            if(fabs(angles_deg[p] - ang_ref)>alpha)
+            {
+                nnn++;
+                if(nnn>3)
+                {
+                    ang_ref = angles_deg[p-3];
+                    ids_keypoints.push_back(p-3);
+                    nnn=0;
+                }
+            }
+        }
+        ids_keypoints.push_back(angles_deg.size()-1);
+
+        QVector<QVector3Dd> new_new_sensor_position;
+        QVector<QVector3Dd> new_new_sensor_orientation;
+        QVector<QVector3Dd> new_new_normals;
+
+
+//        for(int p=0; p<ids_keypoints.size();p++)
+//        {
+//            new_new_sensor_position.push_back(new_sensor_position[ids_keypoints[p]]);
+//            new_new_sensor_orientation.push_back(new_sensor_orientation[ids_keypoints[p]]);
+//            new_new_normals.push_back(new_normals[ids_keypoints[p]]);
+
+//            printQVector3D(new_sensor_position[ids_keypoints[p]].toQVector3D());
+//            printQVector3D(new_normals[ids_keypoints[p]].toQVector3D());
+//            std::cout << angles_deg[ids_keypoints[p]] << std::endl;
+
+//        }
+
+        QVector<QVector3Dd> ideal_position;
+        QVector<QVector3Dd> ideal_orientation;
+
+        for(int p=1; p<ids_keypoints.size(); p++)
+        {
+            int ini = ids_keypoints[p-1];
+            int end = ids_keypoints[p];
+            int mid = ini + (end-ini)/2; //luego coger la media o lago así
+            QVector3Dd n_dir_p = new_normals[mid];
+
+            double angle = angles_deg[mid];
+            for (int q=ini; q<end; q++)
+            {
+                QVector3Dd n_dir_p2 = new_normals[q];
+                //QVector3Dd new_pos(new_sensor_position[q] + n_dir_p2*working_distance);
+                QVector3Dd new_pos(new_sensor_position[q] + n_dir_p*working_distance);
+
+
+                ideal_position.push_back(new_pos);
+                ideal_orientation.push_back(new_sensor_orientation[q]);
+                ideal_orientation[q].setY(90+angles_deg[q]);
+
+                new_new_sensor_position.push_back(new_pos);
+                new_new_sensor_orientation.push_back(new_sensor_orientation[q]);
+                new_new_sensor_orientation[q].setY(90+angle);
+            }
+        }
+
+
+
+        QVector<QVector3Dd> final_sensor_position;
+        QVector<QVector3Dd> final_sensor_orientation;
+        final_sensor_position.push_back(new_new_sensor_position[0]); // Agrega el primer elemento al vector creciente
+        final_sensor_orientation.push_back(new_new_sensor_orientation[0]);
+        QVector<int> id_nodes;
+        id_nodes.push_back(0);
+
+        for (size_t i = 1; i < new_new_sensor_position.size(); ++i) {
+
+            if (new_new_sensor_position[i].z() > final_sensor_position.back().z()) {
+                final_sensor_position.push_back(new_new_sensor_position[i]);
+                final_sensor_orientation.push_back(new_new_sensor_orientation[i]);
+                id_nodes.push_back(i);
+            }
+
+        }
+        id_nodes.push_back(new_new_sensor_position.size()-1);
+        QVector<int> final_ids;
+
+        final_ids.push_back(0);
+        for (int p=0; p<id_nodes.size()-1; p++)
+        {
+//            final_sensor_position.push_back(new_new_sensor_position[id_nodes[p]]);
+//            final_sensor_orientation.push_back(new_new_sensor_orientation[id_nodes[p]]);
+            if(id_nodes[p+1] - id_nodes[p] > 1)
+            {
+                int ind = id_nodes.back() + (id_nodes[p]-final_ids.back())/2;
+                final_ids.push_back(ind);
+            }
+        }
+        final_ids.push_back(new_new_sensor_position.size()-1);
+
+        for (int p=0; p<final_ids.size(); p++)
+        {
+            printQVector3D(new_new_sensor_position[final_ids[p]].toQVector3D());
+        }
+
+
+        //-------------
+
+
+        //------------
+
+
+        // Agrega el último elemento del vector original al vector creciente
+        final_sensor_position.push_back(new_new_sensor_position.back());
+        final_sensor_orientation.push_back(new_new_sensor_orientation.back());
+
+        QVector<QVector3D> final_sensor_position_aux;
+        QVector<QVector3D> final_sensor_orientation_aux;
+
+        for(int y=0;y<final_sensor_position.size();y=y+10)
+        {
+           final_sensor_position_aux.push_back(final_sensor_position[y].toQVector3D());
+           final_sensor_orientation_aux.push_back(final_sensor_orientation[y].toQVector3D());
+
+        }
+
+        std::cout << "N PUNTOS ANTES DE SPLINE: " << final_sensor_position_aux.size() << std::endl;
+
+
+        // Crea la curva B-spline
+        QVector<QVector3D> aux = final_sensor_position_aux;
+        QVector<QVector3D> auxOr = final_sensor_orientation_aux;
+
+        QVector<QVector3Dd> interpolatedPoints_aux;
+        QVector<QVector3Dd> interpolatedOrientation_aux;
+
+
+        //QVector<QVector3D> final_sensor_orientation_aux;
+
+        for (int ppp=0; ppp<final_sensor_position_aux.size()/5; ppp++)
+        {
+            BSpline3D spline(aux, 5);
+            QVector<QVector3D> intPoints = spline.getPoints(0.01);
+
+            BSpline3D splineOr(auxOr, 5);
+            QVector<QVector3D> intOrientation = splineOr.getPoints(0.01);
+
+            for(int pp=0;pp<intPoints.size();pp++)
+            {
+               interpolatedPoints_aux.push_back(QVector3Dd(intPoints[pp].x(),
+                                                           intPoints[pp].y(),
+                                                           intPoints[pp].z()));
+               interpolatedOrientation_aux.push_back(QVector3Dd(intOrientation[pp].x(),
+                                                                 intOrientation[pp].y(),
+                                                                 intOrientation[pp].z()));
+
+            }
+            aux.erase(aux.begin(), aux.begin()+5);
+            auxOr.erase(auxOr.begin(), auxOr.begin()+5);
+        }
+
+        //grado de fiabilidad?
+
+
+
+        std::cout << "N PUNTOS DESPUÉS DE SPLINE: " << interpolatedPoints_aux.size() << std::endl;
+
+        std::string path_save2 = "/step_0"+std::to_string(id_string)+"_traj_perfecta.xml";
+        saveTraj("/home/sara/Descargas/TRAJ/",
+                 path_save2.c_str(),ideal_position, ideal_orientation); //new_rpy_sensor_orientation
+
+        std::string path_save = "/step_0"+std::to_string(id_string)+"_traj_nueva.xml";
+        saveTraj("/home/sara/Descargas/TRAJ/",
+                 path_save.c_str(),final_sensor_position, final_sensor_orientation); //new_rpy_sensor_orientation
+
+        saveTraj("/home/sara/Descargas/TRAJ/int",
+                 path_save.c_str(),interpolatedPoints_aux, interpolatedOrientation_aux); //new_rpy_sensor_orientation
+
+
+        std::cout << "LISTO" << std::endl;
+
+
+    std::cout << "Size Pos sensor: " << new_sensor_position.size() << std::endl;
+    std::cout << "Size keypoints: " << new_new_sensor_position.size() << std::endl;
+//    std::cout << "Size POINTS: " << points_p.size() << std::endl;
+//    std::cout << "Size NORMALS: " << normals_p.size() << std::endl;
+//    std::cout << "Size MEASUREMENTS: " << measurements_p.size() << std::endl;
     }
+
+
 
     /*
     QVector<QVector3Dd> pos_sensor;

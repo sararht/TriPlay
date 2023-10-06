@@ -9,18 +9,19 @@ public:
     QVector3Dd();
     QVector3Dd(double x, double y, double z);
 
-    double x() const { return v[0]; };
-    double y() const { return v[1]; };
-    double z() const { return v[2]; };
+    double x() const { return v[0]; }
+    double y() const { return v[1]; }
+    double z() const { return v[2]; }
 
     void setX(float aX) { v[0] = aX; }
     void setY(float aY) { v[1] = aY; }
     void setZ(float aZ) { v[2] = aZ; }
 
     QVector3Dd operator+(const QVector3Dd &v2);
-    QVector3Dd operator-(const QVector3Dd &v2);
+    QVector3Dd operator-(const QVector3Dd &v2) const;
     QVector3Dd operator/(const double &divisor);
     QVector3Dd operator*(const double &factor);
+
 
     QVector3Dd abs();
 
@@ -35,11 +36,13 @@ public:
 
 
 
-  /*  QVector3Dd &operator+=(const QVector3Dd &vector);
+    QVector3Dd &operator+=(const QVector3Dd &vector);
     QVector3Dd &operator-=(const QVector3Dd &vector);
+    QVector3Dd &operator*=(const QVector3Dd &vector);
+
     QVector3Dd &operator/=(double divisor);
     QVector3Dd &operator*=(double factor);
-*/
+
 
 private:
     double v[3];
