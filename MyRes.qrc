@@ -38,5 +38,7 @@
         <file>images/insertDefectSelection.png</file>
         <file>stl_examples/PUERTA_DELANTERA_IZQ_sub.stl</file>
         <file>stl_examples/chapa2.stl</file>
+        <file>images/style.css</file>
+        <file>images/remote.png</file>
     </qresource>
 </RCC>

@@ -482,9 +482,6 @@ void controller::getTrajectoryNodes(QVector<trajectoryNode> nodes, double vel, d
     else
     {
 
-        std::cout << "HOLAAA: " << std::endl;
-
-
         int frames_i=0;
         QVector<int> vFrames;
         int frames_totales = 0;
@@ -506,9 +503,6 @@ void controller::getTrajectoryNodes(QVector<trajectoryNode> nodes, double vel, d
         }
         double start = omp_get_wtime();
 
-        //////////////////////
-        //BORRAAAAAR
-       // vFrames[0]=4000;
 
     double x_fov;
 
@@ -1084,7 +1078,12 @@ void controller::trajectoryGenerator4(GenTraj_options opt, QVector<trajectoryNod
         int id_string = 0;
 
         //Traj sensor
-        std::string path = "/home/sara/Descargas/prueba/traj_sensor0" + std::to_string(id_string) +".xml";
+        std::string path_global = "/home/sara/Descargas/Porta_rotulador_3D_STL/Penholder/traj/";
+       // std::string path_global = "/home/sara/Descargas/prueba/";
+
+        //std::string path = "/home/sara/Descargas/prueba/traj_sensor0" + std::to_string(id_string) +".xml";
+        std::string path = path_global + "traj_sensor0" + std::to_string(id_string) +".xml";
+
         QFile file(path.c_str());
         QDomDocument xmlBOM;
         if (!file.open(QIODevice::ReadOnly )){qWarning("Error while loading file"); return;}
@@ -1125,7 +1124,9 @@ void controller::trajectoryGenerator4(GenTraj_options opt, QVector<trajectoryNod
         }
 
         // Puntos
-        std::string path_1 = "/home/sara/Descargas/prueba/step_0" + std::to_string(id_string) +"_real.txt";
+       // std::string path_1 = "/home/sara/Descargas/prueba/step_0" + std::to_string(id_string) +"_real.txt";
+
+        std::string path_1 = path_global+"step_0" + std::to_string(id_string) +"_real.txt";
         QFile file1(path_1.c_str());
         if (!file1.open(QIODevice::ReadOnly )){qWarning("Error while loading file"); return;}
         while(!file1.atEnd())
@@ -1137,7 +1138,9 @@ void controller::trajectoryGenerator4(GenTraj_options opt, QVector<trajectoryNod
         }
 
         // Normales
-        std::string path_2 = "/home/sara/Descargas/prueba/normal_data0" + std::to_string(id_string) +".txt";
+       // std::string path_2 = "/home/sara/Descargas/prueba/normal_data0" + std::to_string(id_string) +".txt";
+        std::string path_2 = path_global+"normal_data0" + std::to_string(id_string) +".txt";
+
         QFile file2(path_2.c_str());
         if (!file2.open(QIODevice::ReadOnly )){qWarning("Error while loading file"); return;}
         while(!file2.atEnd())
@@ -1149,7 +1152,9 @@ void controller::trajectoryGenerator4(GenTraj_options opt, QVector<trajectoryNod
         }
 
         // Medidas
-        std::string path_3 = "/home/sara/Descargas/prueba/step_error0" + std::to_string(id_string) +".txt";
+        std::string path_3 = path_global+"step_error0" + std::to_string(id_string) +".txt";
+
+//        std::string path_3 = "/home/sara/Descargas/prueba/step_error0" + std::to_string(id_string) +".txt";
         QFile file3(path_3.c_str());
         if (!file3.open(QIODevice::ReadOnly )){qWarning("Error while loading file"); return;}
         while(!file3.atEnd())
@@ -1212,7 +1217,7 @@ void controller::trajectoryGenerator4(GenTraj_options opt, QVector<trajectoryNod
                 ids_bad.push_back(p);
             }
 
-            new_sensor_position[p].setY(desf_wd/*pos_sensor[p].y() + desf_wd*/);
+            new_sensor_position[p].setY(desf_wd/*pos_sensor[p].y() + desf_wd*/); // AQUÍ TENGO QUE SUMAR WORKING_DISTANCE???
             new_sensor_orientation[p].setZ(-3.5);
             new_normals.push_back(mean_n);
         }
@@ -1315,7 +1320,6 @@ void controller::trajectoryGenerator4(GenTraj_options opt, QVector<trajectoryNod
         }
 
 
-
         QVector<QVector3Dd> final_sensor_position;
         QVector<QVector3Dd> final_sensor_orientation;
         final_sensor_position.push_back(new_new_sensor_position[0]); // Agrega el primer elemento al vector creciente
@@ -1415,15 +1419,20 @@ void controller::trajectoryGenerator4(GenTraj_options opt, QVector<trajectoryNod
 
         std::cout << "N PUNTOS DESPUÉS DE SPLINE: " << interpolatedPoints_aux.size() << std::endl;
 
+        std::string path_save20 = "/step_0"+std::to_string(id_string)+"_traj_solo_position.xml";
+        saveTraj(/*"/home/sara/Descargas/TRAJ/"*/path_global.c_str(),
+                 path_save20.c_str(),new_sensor_position, new_sensor_orientation); //new_rpy_sensor_orientation
+
         std::string path_save2 = "/step_0"+std::to_string(id_string)+"_traj_perfecta.xml";
-        saveTraj("/home/sara/Descargas/TRAJ/",
+        saveTraj(/*"/home/sara/Descargas/TRAJ/"*/path_global.c_str(),
                  path_save2.c_str(),ideal_position, ideal_orientation); //new_rpy_sensor_orientation
 
         std::string path_save = "/step_0"+std::to_string(id_string)+"_traj_nueva.xml";
-        saveTraj("/home/sara/Descargas/TRAJ/",
+        saveTraj(/*"/home/sara/Descargas/TRAJ/"*/path_global.c_str(),
                  path_save.c_str(),final_sensor_position, final_sensor_orientation); //new_rpy_sensor_orientation
 
-        saveTraj("/home/sara/Descargas/TRAJ/int",
+        std::string path_i = path_global+"int";
+        saveTraj(/*"/home/sara/Descargas/TRAJ/int"*/path_i.c_str(),
                  path_save.c_str(),interpolatedPoints_aux, interpolatedOrientation_aux); //new_rpy_sensor_orientation
 
 

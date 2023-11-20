@@ -1,0 +1,9 @@
+{
+    "MetaData": {
+        "Name": "ROSPlugin",
+        "Version": "1.0",
+        "Description": "Plugin for conection with ROS.",
+        "Vendor": "Sara",
+        "Copyright": "Derechos de autor © 2023 Sara"
+    }
+}

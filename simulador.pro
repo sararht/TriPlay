@@ -9,6 +9,11 @@ QMAKE_LIBS += -lgomp -lpthread
 QMAKE_CXXFLAGS_RELEASE *= -O3
 QMAKE_LFLAGS += -Wl,-rpath,"'\$$ORIGIN'"
 QMAKE_LFLAGS += -Wl,-rpath,"'/usr/local/lib/'"
+QMAKE_LFLAGS += -rdynamic
+
+QMAKE_POST_LINK += export ROS_MASTER_URI=http://localhost:11311
+QMAKE_POST_LINK += export ROS_PACKAGE_PATH=/home/sara/robotarm_ws/src:/opt/ros/melodic/share
+
 
 INCLUDEPATH += /usr/local/include/mimmo
 INCLUDEPATH += /usr/local/include/bitpit
@@ -20,6 +25,8 @@ INCLUDEPATH += /usr/local/include/vtk-9.0
 INCLUDEPATH += /home/sara/lapack-3.9.0/SRC
 #INCLUDEPATH += /usr/local/include/opencascade/
 #INCLUDEPATH += /home/sara/VTK/GUISupport/
+#INCLUDEPATH += /opt/ros/melodic/include  # Ruta a las cabeceras de ROS
+
 
 
 LIBS += -lmimmo_D -llapacke -llapack -lblas -lbitpit -lgfortran
@@ -34,6 +41,9 @@ LIBS += -L/usr/local/lib/ -lTKernel -lTKMath -lTKService -lTKV3d -lTKOpenGl \
 
 
 LIBS += $(shell pkg-config opencv --libs)
+
+#LIBS += -L/opt/ros/melodic/lib -lroscpp -lroslib -lrostime
+
 
 # The following define makes your compiler emit warnings if you use
 # any Qt feature that has been marked deprecated (the exact warnings
@@ -72,7 +82,8 @@ SOURCES += \
     rendervtk.cpp \
     defectselection.cpp \
     cv_perlin_noise/PerlinNoise.cpp \
-    bspline3d.cpp
+    bspline3d.cpp \
+    myinterface.cpp
 
 HEADERS += \
     KD_tree_cpp/boundingbox.h \
@@ -104,7 +115,9 @@ HEADERS += \
     defectselection.h \
     draginteractorstyle.h \
     cv_perlin_noise/PerlinNoise.h \
-    bspline3d.h
+    bspline3d.h \INCLUDEPATH += /opt/ros/melodic/include  # Ruta a las cabeceras de ROS
+
+    myinterface.h
 
 FORMS += \
     MainWindow.ui \

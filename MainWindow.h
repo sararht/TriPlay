@@ -47,6 +47,7 @@
 #include <vtktools.h>
 
 #include "defectselection.h"
+#include "plugins/TriPluginInterface/triplugininterface.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -131,6 +132,8 @@ private:
 
     bool dragModeOn = false;
 
+    TriPluginInterface *pluginInterface;
+    bool loadPlugin(const QString &desiredPluginName);
 
 signals:
 
@@ -211,5 +214,6 @@ private slots:
 
 
     void updateUi_drag(double*,double*);
+    void on_actionRemote_conexion_triggered();
 };
 #endif // MAINWINDOW_H

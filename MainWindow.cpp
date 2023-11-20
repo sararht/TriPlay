@@ -301,6 +301,36 @@ void MainWindow::wdgScanAllParams()
 
 }
 
+bool MainWindow::loadPlugin(const QString &desiredPluginName)
+{
+    QDir pluginsDir(QCoreApplication::applicationDirPath());
+#if defined(Q_OS_WIN)
+    if (pluginsDir.dirName().toLower() == "debug" || pluginsDir.dirName().toLower() == "release")
+        pluginsDir.cdUp();
+#elif defined(Q_OS_MAC)
+    if (pluginsDir.dirName() == "MacOS") {
+        pluginsDir.cdUp();
+        pluginsDir.cdUp();
+        pluginsDir.cdUp();
+    }
+#endif
+    pluginsDir.cd("../simulador/plugins");
+    const QStringList entries = pluginsDir.entryList(QDir::Files);
+    for (const QString &fileName : entries) {
+        QPluginLoader pluginLoader(pluginsDir.absoluteFilePath(fileName));
+        QObject *plugin = pluginLoader.instance();
+     //   std::cout << "Error: " << pluginLoader.errorString().toStdString() << std::endl;
+        if (plugin) {
+            pluginInterface = qobject_cast<TriPluginInterface *>(plugin);
+            if (pluginInterface && fileName == desiredPluginName) {
+                    return true;
+            }
+            pluginLoader.unload();
+        }
+    }
+
+    return false;
+}
 
 #include<vtkVersion.h>
 MainWindow::MainWindow(QWidget *parent)
@@ -335,9 +365,31 @@ MainWindow::MainWindow(QWidget *parent)
     ui->label_lW->setVisible(false);
 
 
+
     /// VTK VERSION
     std::cout << "VTK Version: " << vtkVersion::GetVTKVersion() << std::endl;
 
+//    ///LOAD PLUGINS----------------
+//    if (!loadPlugin("librosplugin.so")) {std::cout << "PLUGIN NOT LOADED" << std::endl;}
+//    else
+//    {
+//        QStringList arguments = qApp->arguments();
+//        QCoreApplication *app = QCoreApplication::instance();
+//        int argc = app->arguments().at(0).toInt();
+
+//        char **argv = new char*[1];
+//        argv[0]= "/home/sara/sararht/TESIS/Codigo/simulador/QT/build-simulador-Qt_5_14_2_gcc_64-Release/simulador";
+//        pluginInterface->initPlugin(1,argv);
+//        pluginInterface->precalculate();
+//        pluginInterface->calculate();
+//      //  pluginInterface->postcalculate();
+//     //   pluginInterface->run();
+//        //pluginInterface->start();
+
+//    }
+
+
+    ///----------------------------
 
 
 
@@ -1911,3 +1963,27 @@ void MainWindow::on_actionSmooth_stl_triggered()
 }
 
 
+
+void MainWindow::on_actionRemote_conexion_triggered()
+{
+    ///LOAD PLUGINS----------------
+    if (!loadPlugin("librosplugin.so")) {std::cout << "PLUGIN NOT LOADED" << std::endl;}
+    else
+    {
+        //Arreglar esto
+        QStringList arguments = qApp->arguments();
+        QCoreApplication *app = QCoreApplication::instance();
+        int argc = app->arguments().at(0).toInt();
+        char **argv = new char*[1];
+        argv[0]= "/home/sara/sararht/TESIS/Codigo/simulador/QT/build-simulador-Qt_5_14_2_gcc_64-Release/simulador";
+
+
+        pluginInterface->initPlugin(1,argv);
+        pluginInterface->precalculate();
+        pluginInterface->calculate();
+      //  pluginInterface->postcalculate();
+     //   pluginInterface->run();
+        //pluginInterface->start();
+
+    }
+}

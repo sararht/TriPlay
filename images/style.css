@@ -1,0 +1,107 @@
+/* Estilo general para los widgets */
+QWidget {
+    background-color: #f2f2f2;
+    color: #333333;
+}
+
+/* Estilo para los botones */
+QPushButton {
+    background-color: #3498db;
+    color: #ffffff;
+    border: 1px solid #2980b9;
+    border-radius: 5px;
+    padding: 5px 10px;
+    font-size: 14px;
+}
+
+/* Estilo para las etiquetas de texto */
+QLabel {
+    color: #333333;
+    font-size: 16px;
+}
+
+/* Estilo para los campos de entrada de texto */
+QLineEdit {
+    border: 1px solid #3498db;
+    border-radius: 5px;
+    padding: 5px;
+    font-size: 14px;
+}
+
+/* Estilo para las áreas de texto */
+QTextEdit {
+    border: 1px solid #3498db;
+    border-radius: 5px;
+    padding: 5px;
+    font-size: 14px;
+}
+
+/* Estilo para las listas desplegables */
+QComboBox {
+    background-color: #ffffff;
+    border: 1px solid #3498db;
+    border-radius: 5px;
+    padding: 5px;
+    font-size: 14px;
+    selection-background-color: #3498db;
+}
+
+/* Estilo para las barras de desplazamiento */
+QScrollBar:vertical {
+    background: #f2f2f2;
+    width: 10px;
+    border-radius: 5px;
+}
+
+QScrollBar::handle:vertical {
+    background: #3498db;
+    border-radius: 5px;
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    background: none;
+}
+
+/* Estilo para las barras de desplazamiento horizontal */
+QScrollBar:horizontal {
+    background: #f2f2f2;
+    height: 10px;
+    border-radius: 5px;
+}
+
+QScrollBar::handle:horizontal {
+    background: #3498db;
+    border-radius: 5px;
+}
+
+QScrollBar::add-line:horizontal,
+QScrollBar::sub-line:horizontal {
+    background: none;
+}
+
+/* Estilo para las ventanas emergentes de advertencia */
+QMessageBox {
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    padding: 10px;
+    font-size: 14px;
+}
+
+/* Estilo para los menús emergentes */
+QMenu {
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+QMenu::item {
+    padding: 5px 15px;
+}
+
+QMenu::item:selected {
+    background-color: #3498db;
+    color: #ffffff;
+}

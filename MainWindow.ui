@@ -892,6 +892,8 @@
     <addaction name="menuInsert_Defect_Selection"/>
     <addaction name="separator"/>
     <addaction name="menuChange_background"/>
+    <addaction name="separator"/>
+    <addaction name="actionRemote_conexion"/>
    </widget>
    <widget class="QMenu" name="menuCalculate">
     <property name="title">
@@ -966,6 +968,7 @@
    <addaction name="separator"/>
    <addaction name="actionPointsWindow"/>
    <addaction name="separator"/>
+   <addaction name="actionRemote_conexion"/>
   </widget>
   <widget class="QToolBar" name="toolBar_2">
    <property name="windowTitle">
@@ -1374,6 +1377,15 @@
   <action name="actionSmooth_stl">
    <property name="text">
     <string>Smooth stl</string>
+   </property>
+  </action>
+  <action name="actionRemote_conexion">
+   <property name="icon">
+    <iconset resource="MyRes.qrc">
+     <normaloff>:/MyRes/images/remote.png</normaloff>:/MyRes/images/remote.png</iconset>
+   </property>
+   <property name="text">
+    <string>Remote conexion</string>
    </property>
   </action>
  </widget>

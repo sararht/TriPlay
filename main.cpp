@@ -20,8 +20,17 @@ int main(int argc, char *argv[])
     qRegisterMetaType<vtkSmartPointer<vtkPolyData>>("vtkSmartPointer<vtkPolyData>");
     qRegisterMetaType<renderVTK>("renderVTK");
 
+
     QApplication a(argc, argv);
     a.setApplicationName("TriPlay");
+
+
+    // CSS file
+//    QFile styleFile(":/MyRes/images/estilo.css"); // Reemplaza con la ruta correcta a tu archivo CSS
+//    styleFile.open(QFile::ReadOnly);
+//    QString style = QLatin1String(styleFile.readAll());
+//    a.setStyleSheet(style);
+
 
     //Splash screen
     QPixmap pixmap(":/MyRes/images/logoTriPlayground.svg");
@@ -35,6 +44,8 @@ int main(int argc, char *argv[])
     QTimer::singleShot(1000,&w,SLOT(show()));
 
    // w.show();
+
+  //  std::cout << qApp->argv() << std::endl;
 
     return a.exec();
 }
