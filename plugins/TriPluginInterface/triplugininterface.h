@@ -14,7 +14,11 @@ public:
     virtual void precalculate() = 0;
     virtual void calculate() = 0;
     virtual void postcalculate() = 0;
-    virtual void initPlugin(int argc, char** argv) = 0;
+    virtual void initPlugin(int argc, char** argv, QVector<QVector3D> pos_sensor, QVector<QVector3D> rpy_sensor) = 0;
+
+private:
+    QVector<QVector3D> _pos_sensor;
+    QVector<QVector3D> _rpy_sensor;
 
 };
 

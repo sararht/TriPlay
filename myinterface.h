@@ -11,6 +11,10 @@ public:
     virtual void calculate() = 0;
     virtual void postcalculate() = 0;
 
+private:
+    QVector<QVector3D> _pos_sensor;
+    QVector<QVector3D> _rpy_sensor;
+
 };
 
 

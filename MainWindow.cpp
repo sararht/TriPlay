@@ -369,24 +369,24 @@ MainWindow::MainWindow(QWidget *parent)
     /// VTK VERSION
     std::cout << "VTK Version: " << vtkVersion::GetVTKVersion() << std::endl;
 
-//    ///LOAD PLUGINS----------------
-//    if (!loadPlugin("librosplugin.so")) {std::cout << "PLUGIN NOT LOADED" << std::endl;}
-//    else
-//    {
-//        QStringList arguments = qApp->arguments();
-//        QCoreApplication *app = QCoreApplication::instance();
-//        int argc = app->arguments().at(0).toInt();
+    ///LOAD PLUGINS----------------
+    if (!loadPlugin("libtrajectorygeneratorplugin.so")) {std::cout << "PLUGIN NOT LOADED" << std::endl;}
+    else
+    {
+        QStringList arguments = qApp->arguments();
+        QCoreApplication *app = QCoreApplication::instance();
+        int argc = app->arguments().at(0).toInt();
 
-//        char **argv = new char*[1];
-//        argv[0]= "/home/sara/sararht/TESIS/Codigo/simulador/QT/build-simulador-Qt_5_14_2_gcc_64-Release/simulador";
-//        pluginInterface->initPlugin(1,argv);
-//        pluginInterface->precalculate();
-//        pluginInterface->calculate();
-//      //  pluginInterface->postcalculate();
-//     //   pluginInterface->run();
-//        //pluginInterface->start();
+        char **argv = new char*[1];
+        argv[0]= "/home/sara/sararht/TESIS/Codigo/simulador/QT/build-simulador-Qt_5_14_2_gcc_64-Release/simulador";
+        //luginInterface->initPlugin(1,argv);
+        pluginInterface->precalculate();
+        pluginInterface->calculate();
+        pluginInterface->postcalculate();
+     //   pluginInterface->run();
+        //pluginInterface->start();
 
-//    }
+    }
 
 
     ///----------------------------
@@ -397,7 +397,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     //BUILD THE TREE---------------------------------------------------------------------------------------------
 //    name_file = "/home/sara/sararht/TESIS/Codigo/modelos/PUERTA_DELANTERA_IZQ_sub.stl"; //pieza_achatada_grande2.stl"; //chapa2.stl";///pinzas/fuchosa_r.stl";//chapa2.stl" ; //PUERTA_DELANTERA_IZQ.stl
-    name_file = "../simulador/stl_examples/PUERTA_DELANTERA_IZQ_sub.stl";
+    name_file = "../simulador/stl_examples/PUERTA_DELANTERA_IZQ_0_3.stl";
 
     std::vector<float> coords, normals;
     std::vector<unsigned int> tris, solids;
@@ -785,8 +785,13 @@ void MainWindow::on_button_refresh_clicked(bool change = false)
                 points->SetPoint(itri*3+icorner,c[0],c[1],c[2]);
                 polys->InsertCellPoint(itri*3+icorner);
             }
-            float* n = &normals[itri];
-            normals_tri.push_back(QVector3Dd(n[0],n[1],n[2]));
+//            float* n = &normals[itri];
+//            normals_tri.push_back(QVector3Dd(n[0],n[1],n[2]));
+
+            QVector3Dd A = v1[itri]-v0[itri];
+            QVector3Dd B = v2[itri]-v0[itri];
+            QVector3Dd N = QVector3Dd::crossProduct(A,B);
+            normals_tri.push_back(N/(sqrt(N.x()*N.x()+N.y()*N.y()+N.z()*N.z())));
         }
 
 
@@ -806,7 +811,8 @@ void MainWindow::on_button_refresh_clicked(bool change = false)
            trisModel.push_back(tri_i);
         }
 
-       // tree.delete_KDNode();
+        //tree.delete_KDNode();
+        tree = KDNode();
         tree = *tree.build(trisModel,0);
 
         QVector3Dd new_origin(v0[0].x(), v0[0].y()+200, v0[0].z()-100);
@@ -1962,6 +1968,23 @@ void MainWindow::on_actionSmooth_stl_triggered()
 
 }
 
+static QVector<float> fromString2(QString &str)
+{
+    str.replace("[", "");
+    str.replace("]", "");
+    str.replace(",", "");
+    str.replace(",", "");
+
+    QVector<float> vector;
+    QStringList list = str.split(' ');
+    for (int i=0; i<list.size(); i++)
+    {
+        QString numberGroup = list.at(i);
+        vector.push_back(numberGroup.toFloat());
+    }
+
+    return vector;
+}
 
 
 void MainWindow::on_actionRemote_conexion_triggered()
@@ -1978,7 +2001,66 @@ void MainWindow::on_actionRemote_conexion_triggered()
         argv[0]= "/home/sara/sararht/TESIS/Codigo/simulador/QT/build-simulador-Qt_5_14_2_gcc_64-Release/simulador";
 
 
-        pluginInterface->initPlugin(1,argv);
+
+
+//----------------------------------
+        //Traj sensor
+        int id_string = 0;
+
+        QVector<QVector3D> pos_sensor;
+        QVector<QVector3D> rpy_sensor;
+        std::string path_global = "/home/sara/Descargas/penholder/int/";
+      //  std::string path_global = "/home/sara/Descargas/puerta_pequeña/";
+
+        //std::string path = "/home/sara/Descargas/prueba/traj_sensor0" + std::to_string(id_string) +".xml";
+     //   std::string path = path_global + "traj_sensor0" + std::to_string(id_string) +".xml";
+        std::string path = path_global + "step_00_traj_nueva.xml";
+
+        QFile file(path.c_str());
+        QDomDocument xmlBOM;
+        if (!file.open(QIODevice::ReadOnly )){qWarning("Error while loading file"); return;}
+        else{xmlBOM.setContent(&file);}
+        QDomElement root = xmlBOM.documentElement();
+        QDomElement Component=root.firstChild().toElement();
+        if (Component.tagName()=="POSITION")
+        {
+            QDomElement Component2=Component.firstChild().toElement();
+            while (Component2.tagName()=="XYZ")
+            {
+                QString values =Component2.firstChild().toText().data();
+                QVector<float> v_f = fromString2(values);
+
+                QVector3D posxyz_ = QVector3D(v_f[0], v_f[1], v_f[2]);
+                pos_sensor.push_back(posxyz_);
+                Component2 = Component2.nextSibling().toElement();
+
+            }
+
+        }
+        Component = Component.nextSibling().toElement();
+        if (Component.tagName()=="RPYdata")
+        {
+            QDomElement Component2=Component.firstChild().toElement();
+            while (Component2.tagName()=="RPY")
+            {
+                QString values =Component2.firstChild().toText().data();
+                QVector<float> v_f = fromString2(values);
+
+                QVector3D rpy_ = QVector3D(v_f[0], v_f[1], v_f[2]);
+                //QVector3D rpy_ = QVector3D(0,90,0);
+
+                rpy_sensor.push_back(rpy_);
+                Component2 = Component2.nextSibling().toElement();
+            }
+
+        }
+ //----------------------------------
+
+
+
+
+
+        pluginInterface->initPlugin(1,argv, pos_sensor, rpy_sensor);
         pluginInterface->precalculate();
         pluginInterface->calculate();
       //  pluginInterface->postcalculate();

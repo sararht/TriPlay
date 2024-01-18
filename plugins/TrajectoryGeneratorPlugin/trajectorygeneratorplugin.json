@@ -1,0 +1,9 @@
+{
+    "MetaData": {
+        "Name": "TrajectoryGeneratorPlugin",
+        "Version": "1.0",
+        "Description": "Plugin for trajectory generation.",
+        "Vendor": "Sara",
+        "Copyright": "Derechos de autor © 2023 Sara"
+    }
+}
