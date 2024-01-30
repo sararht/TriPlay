@@ -118,6 +118,7 @@ private:
     QWidget *wScanAll;
     QWidget *wStepsNumber;
     QWidget *wPlaneSelection;
+    QWidget *wTrajectoryNodes;
     QComboBox *pageComboBox;
     QSpinBox *steps_sb;
 
@@ -177,6 +178,7 @@ private slots:
     void wdgTrajectoryGeneratorParams();
     void wdgScanAllParams();
     void wdgDefectSelection();
+    void wdgTrajectoryNodesParams();
     void waitForDefectInsertion();
 
 

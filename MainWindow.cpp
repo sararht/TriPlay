@@ -119,7 +119,6 @@ void MainWindow::wdgDefectSelection()
     //Rellenar y completar widget
     //wdg_defect_selection->show(); //Que se muestre cuando lo necesite
 }
-
 void MainWindow::wdgSensorParams()
 {
 
@@ -257,7 +256,6 @@ void MainWindow::wdgTrajectoryGeneratorParams()
 
     wTrajGen->setLayout(lay_general);
 }
-
 void MainWindow::wdgScanAllParams()
 {
     //Widget steps
@@ -300,6 +298,52 @@ void MainWindow::wdgScanAllParams()
     wScanAll->setLayout(layout);
 
 }
+void MainWindow::wdgTrajectoryNodesParams()
+{
+    // Crear check boxes para la primera pregunta
+    QLabel labelPregunta1("Execute literal trajectory:");
+    QCheckBox checkBoxPregunta1("Sí");
+
+    // Crear un diseño para organizar los elementos de la primera pregunta
+    QVBoxLayout layoutPregunta1;
+    layoutPregunta1.addWidget(&labelPregunta1);
+    layoutPregunta1.addWidget(&checkBoxPregunta1);
+
+    // Crear el contenedor principal para la primera pregunta
+    QWidget containerPregunta1;
+    containerPregunta1.setLayout(&layoutPregunta1);
+
+    // Crear check boxes para la segunda pregunta
+    QLabel labelPregunta2("Split into different files:");
+    QCheckBox checkBoxPregunta2("Sí");
+
+    // Crear un diseño para organizar los elementos de la segunda pregunta
+    QVBoxLayout layoutPregunta2;
+    layoutPregunta2.addWidget(&labelPregunta2);
+    layoutPregunta2.addWidget(&checkBoxPregunta2);
+
+    // Crear el contenedor principal para la segunda pregunta
+    QWidget containerPregunta2;
+    containerPregunta2.setLayout(&layoutPregunta2);
+
+    // Crear un diseño principal para organizar ambos contenedores
+    QVBoxLayout mainLayout;
+    mainLayout.addWidget(&containerPregunta1);
+    mainLayout.addWidget(&containerPregunta2);
+
+    // Configurar el cuadro de diálogo principal con el diseño
+  //  dialog.setLayout(&mainLayout);
+
+    // Agregar botón de "Aceptar"
+    QPushButton btnAceptar("Aceptar");
+    mainLayout.addWidget(&btnAceptar);
+
+    wTrajectoryNodes = new QWidget();
+    wTrajectoryNodes->setLayout(&mainLayout);
+
+
+}
+
 
 bool MainWindow::loadPlugin(const QString &desiredPluginName)
 {
@@ -349,6 +393,7 @@ MainWindow::MainWindow(QWidget *parent)
     wdgDefectGuide();
     wdgTrajectoryGeneratorParams();
     wdgScanAllParams();
+    wdgTrajectoryGeneratorParams();
 
     //--------------VISIBILITY------------------------
 
@@ -397,7 +442,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     //BUILD THE TREE---------------------------------------------------------------------------------------------
 //    name_file = "/home/sara/sararht/TESIS/Codigo/modelos/PUERTA_DELANTERA_IZQ_sub.stl"; //pieza_achatada_grande2.stl"; //chapa2.stl";///pinzas/fuchosa_r.stl";//chapa2.stl" ; //PUERTA_DELANTERA_IZQ.stl
-    name_file = "../simulador/stl_examples/PUERTA_DELANTERA_IZQ_0_3.stl";
+//    name_file = "../simulador/stl_examples/PUERTA_DELANTERA_IZQ_0_3.stl";
+    name_file = "/home/sara/sararht/TESIS/Codigo/modelos/pieza_achatada_grande_90.stl";
 
     std::vector<float> coords, normals;
     std::vector<unsigned int> tris, solids;
@@ -638,8 +684,9 @@ void MainWindow::frameDoneTrajUpdate(QVector<trajectoryNode> nodes, QVector<int>
     QQuaternion q_ = q_i;
     sensor sensor_tmp(origin_, q_, new_sensor.working_range, new_sensor.working_distance, new_sensor.resolution, new_sensor.FOV, new_sensor.uncertainty);
 
+    QVector3D eulers = q_.toEulerAngles();
     if(USE_VTK_RENDER)
-        renderer_vtk.updateRendered(sensor_tmp, true);
+        renderer_vtk.updateRendered(sensor_tmp/*, true*/); //CAMBIO ESTO
     else
         renderer.updateRenderer(sensor_tmp);
 
@@ -1193,33 +1240,47 @@ void MainWindow::on_actionGet_Trajectory_from_triggered()
         QDomDocument xmlBOM;
         QString suffix;
 
+        bool executeLiteral = false;
+        bool splitFiles = false;
+
         QString path_loadTraj = QFileDialog::getOpenFileName(this, "Load Trajectory", QDir::homePath(),"XML Files (*.xml *.si *.txt)");
+
         if (!path_loadTraj.isEmpty() && !path_loadTraj.isNull())
         {
+            //ARREGLAR ESTOOOO
+         //   wTrajectoryNodes->show();
+            //---------------------------------------------------------------------------
 
             QMessageBox::information(this, "INFO", "Trajectory loaded. Select save directory");
             path = QFileDialog::getExistingDirectory(this, "QFileDialog.getSaveDirectory", "");
 
-
             if (!path.isEmpty() && !path.isNull())
             {
+
                 //Leer del archivo las posiciones, cómo guardar la trayectoria
                 QFile file(path_loadTraj);
                 QFileInfo file_info(path_loadTraj);
                 suffix = file_info.suffix();
 
+
                 if (!file.open(QIODevice::ReadOnly ))
                 {
                        // Error while loading file
+                    std::cout <<"ERROR" << std::endl;
+
                 }
                 else
                 {
+
                     readFile = true;
                     xmlBOM.setContent(&file);
-                }
-            }
 
+                }
+
+            }
         }
+
+        std::cout <<"probando" << std::endl;
 
         if (readFile && suffix=="xml")
         {
@@ -1263,17 +1324,18 @@ void MainWindow::on_actionGet_Trajectory_from_triggered()
                     }
 
                 }
+
                 Component = Component.nextSibling().toElement();
 
             }
 
 
-            // int frames = pos_dataTraj.size();
+             int frames = ui->fpsSpinBox->value();
              double fov = ui->fovSpinBox->value();
              double resolution = ui->resolutionSpinBox->value();
              double w_range = ui->workingRangeSpinBox->value();
              double w_distance = ui->workingDistanceSpinBox->value();
-            // double vel = ui->velSpinBox->value();
+             double vel = ui->velSpinBox->value();
              double uncertainty = ui->uncertaintySpinBox->value();
 
              ui->progressBar->show();
@@ -1283,10 +1345,25 @@ void MainWindow::on_actionGet_Trajectory_from_triggered()
                  renderer_vtk.drawTraj(pos_dataTraj);
              else
                 renderer.insertTraj(pos_dataTraj);
-             emit button_traj_node_from_clicked(pos_dataTraj, rpy_dataTraj, fov, resolution, w_range, w_distance, uncertainty, tree, path);
+
+             if(executeLiteral)
+                emit button_traj_node_from_clicked(pos_dataTraj, rpy_dataTraj, fov, resolution, w_range, w_distance, uncertainty, tree, path);
+
+            else
+             {
+
+                 QVector<trajectoryNode> nodes_load;
+                 for(int id=0; id<pos_dataTraj.size();id++)
+                 {
+
+                     QQuaternion q = QQuaternion::fromEulerAngles(rpy_dataTraj[id].y(),rpy_dataTraj[id].z(),rpy_dataTraj[id].x());
+                     trajectoryNode node_aux(pos_dataTraj[id],q);
+                     nodes_load.push_back(node_aux);
+                 }
+
+                 emit button_traj_node_clicked(nodes_load, vel, frames, fov, resolution, w_range, w_distance, uncertainty, tree, path, false);
+             }
         }
-
-
         else if (readFile && suffix=="si")
         {
             //int a = 0;
@@ -1295,7 +1372,6 @@ void MainWindow::on_actionGet_Trajectory_from_triggered()
 
             //int lhgl=0;
         }
-
         else if (readFile && suffix=="txt")
         {
             QVector<trajectoryNode> nodes_load;
