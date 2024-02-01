@@ -237,6 +237,15 @@ void renderVTK::updateRendered(sensor sensor_model, bool isInTraj)
     double n_pitch = sensor_model.pitch; while(n_pitch>180)n_pitch=n_pitch-360; while(n_pitch<-180)n_pitch=n_pitch+360;
     double n_yaw = sensor_model.yaw; while(n_yaw>180)n_yaw=n_yaw-360; while(n_yaw<-180)n_yaw=n_yaw+360;
 
+ //ESTO QUITAR---------------------
+    if(n_yaw !=0 )
+    {
+        n_pitch = 180 - n_pitch;
+        n_yaw = 0;
+    }
+    if(n_roll !=0 ) n_roll=0;
+//------------------------------
+
     //ASSEMBLY
     sensor_laser->SetPosition(t_final.x(),t_final.y(),t_final.z());
     if (!isInTraj)
