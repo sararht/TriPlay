@@ -37,10 +37,14 @@ private:
    QVector<pointTraj> _traj_interpolated;
    QVector<QVector3D> _pointcloud;
    QVector<QVector3D> _normal_map;
+   QVector<QVector3D> _normal_scan_map;
    QVector<QVector3D> _scan_image;
 
    QVector<QVector<float>> _density_map;
    cv::Mat _density_map_raw;
+   cv::Mat _normal_scan_image;
+
+
 
    QVector<pointTraj> _traj_simple_new;
    QVector<pointTraj> _traj_interpolated_new;
