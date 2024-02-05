@@ -1,4 +1,4 @@
-QT       += core gui sql
+QT       += core gui sql websockets
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport xml qml
 
@@ -115,7 +115,9 @@ HEADERS += \
     defectselection.h \
     draginteractorstyle.h \
     cv_perlin_noise/PerlinNoise.h \
-    bspline3d.h \INCLUDEPATH += /opt/ros/melodic/include  # Ruta a las cabeceras de ROS
+    bspline3d.h \INCLUDEPATH += /opt/ros/melodic/include \  # Ruta a las cabeceras de ROS
+    websocketxmlserver.h \
+    tcpxmlserver.h
 
     myinterface.h
 

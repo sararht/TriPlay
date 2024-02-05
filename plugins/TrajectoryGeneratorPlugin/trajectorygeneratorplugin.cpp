@@ -750,6 +750,13 @@ void TrajectoryGeneratorPlugin::calculate()
                 qInfo() << "incX; " << incX;
                 qInfo() << "incY; " << incY;
                 qInfo() << "DESF: " << desf_wd;
+                double alpha = (rpy_aux.y()+angle_degrees) * M_PI / 180.0;
+                double new_incX= incX*cos(alpha) + incY*sin(alpha);
+                double new_incY= -incX*sin(alpha) + incY*cos(alpha);
+                qInfo() << "Viejos: " << incX << ", " << incY;
+                qInfo() << "Nuevos: " << new_incX << ", " << new_incY;
+
+
 
                 QVector3D pos_i = _traj_interpolated[id_mid].positionXYZ;
                 QVector3D rpy_i = rpy_aux;//_traj_interpolated[id_mid].orientationRPY;

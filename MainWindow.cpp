@@ -410,6 +410,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->label_lW->setVisible(false);
 
 
+    webServer = new TcpXmlServer(5000, this);
 
     /// VTK VERSION
     std::cout << "VTK Version: " << vtkVersion::GetVTKVersion() << std::endl;

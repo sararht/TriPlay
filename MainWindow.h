@@ -48,6 +48,8 @@
 
 #include "defectselection.h"
 #include "plugins/TriPluginInterface/triplugininterface.h"
+//#include "websocketxmlserver.h"
+#include "tcpxmlserver.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -132,6 +134,9 @@ private:
     bool visibilityListPoints = false;
 
     bool dragModeOn = false;
+
+//    WebSocketXMLServer* webServer;
+    TcpXmlServer* webServer;
 
     TriPluginInterface *pluginInterface;
     bool loadPlugin(const QString &desiredPluginName);
