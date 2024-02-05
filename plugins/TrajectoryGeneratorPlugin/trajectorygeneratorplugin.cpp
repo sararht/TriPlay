@@ -11,6 +11,7 @@
 #include <opencv2/opencv.hpp>
 #include <QtDebug>
 #include <QQuaternion>
+#include <eigen3/Eigen/Eigen>
 
 void saveTraj(QString path, QString file_name, QVector<QVector3D> pos_data, QVector<QVector3D> rpy_data, bool complete =  true)
 {
@@ -238,6 +239,17 @@ QVector3D calcularMediana(QVector<QVector3D> &normales) {
 
     return mediana;
 }
+
+
+
+//Angle en grados
+void calculateDisplacement(double angle_deg, double distance, double& displacementX, double& displacementY) {
+    // Calcula los desplazamientos en X e Y
+    displacementX = distance * sin(angle_deg / 180.0 * M_PI);
+    displacementY = distance * (1 - cos(angle_deg / 180.0 * M_PI));
+}
+
+
 
 std::string path_global = "/home/sara/Descargas/PRUEBAS_DENSIDAD/traj_100/new_traj/"; //portaRotu
 int points_per_profile = 100;
@@ -835,14 +847,21 @@ void TrajectoryGeneratorPlugin::calculate()
             {
                 QVector3D pos_ini = _pos_sensor[j];
                 QVector3D pos_end = _pos_sensor[j+1];
+                QVector3D pos_mid = pos_ini + (pos_end-pos_ini)/2;
+
+                QVector3D rpy_ini = _rpy_sensor[j];
+                QVector3D rpy_end = _rpy_sensor[j+1];
+                QVector3D rpy_mid = rpy_ini + (rpy_end-rpy_ini)/2;
+
                 double diff_ini = (pos_ini-pos_area_ini).length();
                 double diff_end = (pos_end-pos_area_end).length();
 
                 if(diff_ini<50 && diff_end<50)
                 {
                     qInfo() << "sensor: ";
-                    qInfo() << pos_ini;
-                    qInfo() << pos_end;
+                    qInfo() << pos_ini << " / " << rpy_ini;
+                    qInfo() << pos_end << " / " << rpy_end;
+                    qInfo() << pos_mid << " / " << rpy_mid;
 
                     //Actualizar esas poses!
                     QVector3D rpy_aux = _traj_interpolated[id_ini+(id_end-id_ini)/2].orientationRPY;
@@ -858,24 +877,37 @@ void TrajectoryGeneratorPlugin::calculate()
                         angle_degrees *= -1;
                     qInfo()<<"Quiero el sensor con un: " <<90+angle_degrees;
 
+
                     double dif_angle =-(rpy_aux.y() - (90+angle_degrees));
                     qInfo() << dif_angle;
+                    if(dif_angle>25)dif_angle=25;
+                    else if(dif_angle<-25)dif_angle=-25;
 
-                    qInfo() << _traj_interpolated[id_ini+(id_end-id_ini)/2].positionXYZ;
-                    double desf_wd = mean_measurements[id_ini+(id_end-id_ini)/2];
-                    double incX = desf_wd*sin(dif_angle/180*M_PI);
-                    double c = 2*desf_wd*sin((dif_angle/2)/180*M_PI);
-                    double incY = sqrt(c*c - incX*incX);
+                    double desf_wd = working_distance; //mean_measurements[id_ini+(id_end-id_ini)/2];
+                    qInfo() << desf_wd;
+                    double incX, incY;
+                    calculateDisplacement(dif_angle,desf_wd,incX,incY);
+                    double alpha = (rpy_aux.y()+dif_angle) * M_PI / 180.0;
+                    double new_incX= incX*cos(alpha) + incY*sin(alpha);
+                    double new_incY= -incX*sin(alpha) + incY*cos(alpha);
+                    qInfo() << "Viejos: " << incX << ", " << incY;
+                    qInfo() << "Nuevos: " << new_incX << ", " << new_incY;
 
-                    qInfo() << incY <<" - " <<incX;
+                    QVector3D new_pos, new_rpy;
+                    new_pos = pos_mid + QVector3D(0,-new_incY, new_incX);
+                    new_rpy = rpy_aux + QVector3D(0,dif_angle,0);
+                    qInfo() << new_pos;
+                    qInfo() << new_rpy;
 
-                    //AQUIIIIII
-                    pos_ini.setY(pos_ini.y()-incY);
-                    pos_ini.setZ(pos_ini.z()+incX);
-                    pos_end.setY(pos_ini.y()-incY);
-                    pos_end.setZ(pos_ini.z()+incX);
-                    _pos_sensor[j] = pos_ini;
-                    _pos_sensor[j+1] = pos_end;
+                    QVector3D diff = new_pos - _pos_sensor[j];
+                    if(QVector3D::dotProduct(diff, scan_dir) < 0)
+                    {
+                        _pos_sensor[j]=new_pos;
+                        _rpy_sensor[j]=new_rpy;
+                    }
+
+
+
                 }
 
             }
