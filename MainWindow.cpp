@@ -413,26 +413,26 @@ MainWindow::MainWindow(QWidget *parent)
     webServer = new TcpXmlServer(5000, this);
 
     /// VTK VERSION
-    std::cout << "VTK Version: " << vtkVersion::GetVTKVersion() << std::endl;
+   // std::cout << "VTK Version: " << vtkVersion::GetVTKVersion() << std::endl;
 
     ///LOAD PLUGINS----------------
-    if (!loadPlugin("libtrajectorygeneratorplugin.so")) {std::cout << "PLUGIN NOT LOADED" << std::endl;}
-    else
-    {
-        QStringList arguments = qApp->arguments();
-        QCoreApplication *app = QCoreApplication::instance();
-        int argc = app->arguments().at(0).toInt();
+//    if (!loadPlugin("libtrajectorygeneratorplugin.so")) {std::cout << "PLUGIN NOT LOADED" << std::endl;}
+//    else
+//    {
+//        QStringList arguments = qApp->arguments();
+//        QCoreApplication *app = QCoreApplication::instance();
+//        int argc = app->arguments().at(0).toInt();
 
-        char **argv = new char*[1];
-        argv[0]= "/home/sara/sararht/TESIS/Codigo/simulador/QT/build-simulador-Qt_5_14_2_gcc_64-Release/simulador";
-        //luginInterface->initPlugin(1,argv);
-        pluginInterface->precalculate();
-        pluginInterface->calculate();
-        pluginInterface->postcalculate();
-     //   pluginInterface->run();
-        //pluginInterface->start();
+//        char **argv = new char*[1];
+//        argv[0]= "/home/sara/sararht/TESIS/Codigo/simulador/QT/build-simulador-Qt_5_14_2_gcc_64-Release/simulador";
+//        //luginInterface->initPlugin(1,argv);
+//        pluginInterface->precalculate();
+//        pluginInterface->calculate();
+//        pluginInterface->postcalculate();
+//     //   pluginInterface->run();
+//        //pluginInterface->start();
 
-    }
+//    }
 
 
     ///----------------------------
@@ -585,6 +585,13 @@ MainWindow::MainWindow(QWidget *parent)
     connect(this, SIGNAL(button_dragMode_clicked(bool, renderVTK)), &controller_, SLOT(updateDragMode(bool, renderVTK)));
     connect(&controller_, SIGNAL(updateUi(double*,double*)), this, SLOT(updateUi_drag(double*,double*)));
 
+//    connect(this,
+//            SIGNAL(button_traj_generator_plugin_clicked(TriPluginInterface*/*,QVector<QVector3Dd>,QVector<QVector3Dd>,double,int,double,double,double,double,double,KDNode,QString*/)),
+//            &controller_,
+//            SLOT(trajGeneratorPlugin(TriPluginInterface *plugin/*, QVector<QVector3Dd> pos_dataTraj, QVector<QVector3Dd> rpy_dataTraj, double vel, int frames, double fov, double resolution, double w_range, double w_distance, double uncertainty, KDNode tree, QString path*/))
+//            );
+
+
     thread_controller->start();
     thread_controller->setPriority(QThread::TimeCriticalPriority);
 
@@ -690,6 +697,8 @@ void MainWindow::frameDoneTrajUpdate(QVector<trajectoryNode> nodes, QVector<int>
         renderer_vtk.updateRendered(sensor_tmp/*, true*/); //CAMBIO ESTO
     else
         renderer.updateRenderer(sensor_tmp);
+
+
 
 
 }
@@ -1427,12 +1436,104 @@ void MainWindow::on_actionGet_Trajectory_from_triggered()
         }
 
     file.close();
-}
 
+}
 
 
 void MainWindow::on_actionTrajectory_Generator_triggered()
 {
+
+    ///LOAD PLUGINS----------------
+    if (!loadPlugin("libtrajectorygeneratorplugin.so")) {std::cout << "PLUGIN NOT LOADED" << std::endl;}
+    else
+    {
+        QStringList arguments = qApp->arguments();
+        QCoreApplication *app = QCoreApplication::instance();
+        int argc = app->arguments().at(0).toInt();
+
+        char **argv = new char*[1];
+        argv[0]= "/home/sara/sararht/TESIS/Codigo/simulador/QT/build-simulador-Qt_5_14_2_gcc_64-Release/simulador";
+        //
+        int n_iteraciones = 2;
+        pluginInterface->setCustomFlag(true);
+        QString path ="/home/sara/Descargas/PRUEBAS_DENSIDAD/traj_100/";
+
+//        emit button_traj_generator_plugin_clicked(pluginInterface);
+
+
+
+        for(int i=0; i<n_iteraciones; i++)
+        {
+            //scan_finished = false;
+            if (i>0)
+              pluginInterface->setCustomFlag(false);
+
+            qInfo() << path;
+            pluginInterface->setPath(path);
+            pluginInterface->precalculate();
+            pluginInterface->calculate();
+            pluginInterface->postcalculate();
+
+            //Hacer el escaneo
+            QVector<QVector3D> pos_sensor_i, rpy_sensor_i;
+            pluginInterface->getTrajectory(pos_sensor_i, rpy_sensor_i);
+            QVector<trajectoryNode> nodes_load;
+            QVector<QVector3Dd> pos_dataTraj;
+            for(int id=0; id<pos_sensor_i.size();id++)
+            {
+
+                QQuaternion q = QQuaternion::fromEulerAngles(rpy_sensor_i[id].y(),rpy_sensor_i[id].z(),rpy_sensor_i[id].x());
+                QVector3Dd posxyz_ = QVector3Dd(pos_sensor_i[id].x(), pos_sensor_i[id].y(), pos_sensor_i[id].z());
+                pos_dataTraj.push_back(posxyz_);
+
+                trajectoryNode node_aux(posxyz_,q);
+                nodes_load.push_back(node_aux);
+            }
+
+            double vel = 0.3;
+            double fov = 50;
+            double resolution = 100;
+            int frames = 500;
+            double w_range = ui->workingRangeSpinBox->value();
+            double w_distance = ui->workingDistanceSpinBox->value();
+            double uncertainty = ui->uncertaintySpinBox->value();
+
+            path = path + "new_traj/";
+
+            ui->progressBar->show();
+            ui->button_stop->show();
+
+            if(USE_VTK_RENDER)
+                renderer_vtk.drawTraj(pos_dataTraj);
+            else
+               renderer.insertTraj(pos_dataTraj);
+
+            emit button_traj_node_clicked(nodes_load, vel, frames, fov, resolution, w_range, w_distance, uncertainty, tree, path, false);
+            //Esperar a que acabe eh!!
+//            while(true)
+//            {
+
+//            }
+            std::cout << "Presiona Enter para continuar...";
+                std::string line;
+                std::getline(std::cin, line);
+            qInfo() << "Acabó escaneo anterior";
+
+       }
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+    /*
     // Select plane and axis
 
     QMessageBox *mbTrajGen = new QMessageBox();
@@ -1680,6 +1781,7 @@ void MainWindow::on_actionTrajectory_Generator_triggered()
         }
 
     }
+    */
 
 }
 

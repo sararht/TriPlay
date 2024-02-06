@@ -40,5 +40,7 @@
         <file>stl_examples/chapa2.stl</file>
         <file>images/style.css</file>
         <file>images/remote.png</file>
+        <file>images/trajGenerator.png</file>
+        <file>images/trajGenerator2.png</file>
     </qresource>
 </RCC>

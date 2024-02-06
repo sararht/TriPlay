@@ -251,20 +251,38 @@ void calculateDisplacement(double angle_deg, double distance, double& displaceme
 
 
 
-std::string path_global = "/home/sara/Descargas/PRUEBAS_DENSIDAD/traj_100/new_traj/"; //portaRotu
+//std::string path_global = "/home/sara/Descargas/PRUEBAS_DENSIDAD/traj_100/"; //portaRotu
 int points_per_profile = 100;
 double working_distance = 150;
-bool first_it = false;
+//bool first_it = false;
 
 void TrajectoryGeneratorPlugin::precalculate()
 {
 
+    //Limpiar todo------------------
+    _traj_interpolated.clear();
+    _traj_simple.clear();
+    _traj_interpolated_new.clear();
+    _traj_simple_new.clear();
+    _pos_sensor.clear();
+    _rpy_sensor.clear();
+    _pointcloud.clear();
+    _normal_map.clear();
+    _normal_scan_map.clear();
+    _scan_image.clear();
+    _density_map.clear();
+    //------------------------------
+
+
+
+    std::string path_global = _path.toStdString();
     qInfo() << "PRECALCULATE: Loading data...";
 
 
     int id_string = 0;
     QVector<QVector3D> pos_sensor, rpy_sensor;
     QVector<QVector3D> pos_sensor_simple, rpy_sensor_simple;
+
 
 
     ///-----------
@@ -290,10 +308,9 @@ void TrajectoryGeneratorPlugin::precalculate()
                QVector3D posxyz_ = QVector3D(v_f[0], v_f[1], v_f[2]);
                pos_sensor_simple.push_back(posxyz_);
                Component2 = Component2.nextSibling().toElement();
-
            }
-
        }
+
        Component22 = Component22.nextSibling().toElement();
        if (Component22.tagName()=="RPYdata")
        {
@@ -456,6 +473,11 @@ void TrajectoryGeneratorPlugin::precalculate()
 
 void TrajectoryGeneratorPlugin::calculate()
 {
+    bool first_it = _isFirstIteration;
+
+    if(first_it) qInfo() << "Primera iteración";
+    else qInfo() << "NO primera iteración";
+
 
     int id_string = 0;
     QVector3D normal_sensor(0,1,0);
@@ -598,9 +620,9 @@ void TrajectoryGeneratorPlugin::calculate()
         float max_density = *std::max_element(mean_density_profiles.begin(), mean_density_profiles.end());
         float min_density = findMinExcludingZero(mean_density_profiles);
         double umbral = (max_density-min_density)/1.5;
-        qInfo() << "UMBRAL: " << umbral;
-        qInfo() << "max: " << max_density;
-        qInfo() << "min: " << min_density;
+//        qInfo() << "UMBRAL: " << umbral;
+//        qInfo() << "max: " << max_density;
+//        qInfo() << "min: " << min_density;
 
 
         QVector<int> low_density_ids;
@@ -624,12 +646,11 @@ void TrajectoryGeneratorPlugin::calculate()
         {
             if((low_density_ids[i+1]-low_density_ids[i])<2)
             {
-                qInfo() << _traj_interpolated[low_density_ids[i+1]].positionXYZ;
+             //  qInfo() << _traj_interpolated[low_density_ids[i+1]].positionXYZ;
                 area_i.push_back(low_density_ids[i+1]);
             }
             else
             {
-                qInfo() << "HOLA: "<< area_i.size();
                 if (area_i.size()>4)
                     areas_low_density.push_back(area_i);
                 area_i.clear();
@@ -642,7 +663,7 @@ void TrajectoryGeneratorPlugin::calculate()
 
     if (!first_it)
     {
-        qInfo() << _traj_simple.size();
+       // qInfo() << _traj_simple.size();
         //Retocar los puntos y añadir puntos intermedios
 //        _pos_sensor.push_back(_traj_simple[0].positionXYZ);
 //        _rpy_sensor.push_back(_traj_simple[0].orientationRPY);
@@ -651,7 +672,7 @@ void TrajectoryGeneratorPlugin::calculate()
             QVector3D pos_ini = _traj_simple[i].positionXYZ;
             QVector3D pos_end = _traj_simple[i+1].positionXYZ;
             QVector3D diff = pos_end -pos_ini;
-            qInfo() << "DIFF: " << diff;
+         //   qInfo() << "DIFF: " << diff;
 
             _pos_sensor.push_back( _traj_simple[i].positionXYZ);
             _rpy_sensor.push_back( _traj_simple[i].orientationRPY);
@@ -706,8 +727,8 @@ void TrajectoryGeneratorPlugin::calculate()
                     rpy_aux.setX(0);
                 }
 
-                qInfo() << "POS: "<< _traj_interpolated[id_mid].positionXYZ;
-                qInfo() << "RPY: "<< rpy_aux;
+//                qInfo() << "POS: "<< _traj_interpolated[id_mid].positionXYZ;
+//                qInfo() << "RPY: "<< rpy_aux;
 
                 double angle_aux = 90-rpy_aux.y();
                 if(angle_aux<0)angle_aux*=-1;
@@ -729,11 +750,11 @@ void TrajectoryGeneratorPlugin::calculate()
                 if (QVector3D::dotProduct(scan_dir,mean_n.normalized()) < 0) //ESTO CAMBIARLO SEGÚN LA DIRECCIÓN DE ESCANEO!!
                     angle_degrees *= -1;
 
-                   qInfo()<<"Sensor: " << normal_sensor;
-                   qInfo()<<"Superficie: " <<mean_n.normalized();
-                   qInfo()<<"Superficie i: " <<mean_normals[id_mid];
+//                   qInfo()<<"Sensor: " << normal_sensor;
+//                   qInfo()<<"Superficie: " <<mean_n.normalized();
+//                   qInfo()<<"Superficie i: " <<mean_normals[id_mid];
 
-                qInfo() << "ANGLE; " <<angle_degrees;
+//                qInfo() << "ANGLE; " <<angle_degrees;
                 if(angle_degrees>10) angle_degrees = 10;
                 if(angle_degrees<10) angle_degrees = -10;
 
@@ -747,14 +768,14 @@ void TrajectoryGeneratorPlugin::calculate()
     //                incX*=-1;
     //            }
 
-                qInfo() << "incX; " << incX;
-                qInfo() << "incY; " << incY;
-                qInfo() << "DESF: " << desf_wd;
+//                qInfo() << "incX; " << incX;
+//                qInfo() << "incY; " << incY;
+//                qInfo() << "DESF: " << desf_wd;
                 double alpha = (rpy_aux.y()+angle_degrees) * M_PI / 180.0;
                 double new_incX= incX*cos(alpha) + incY*sin(alpha);
                 double new_incY= -incX*sin(alpha) + incY*cos(alpha);
-                qInfo() << "Viejos: " << incX << ", " << incY;
-                qInfo() << "Nuevos: " << new_incX << ", " << new_incY;
+//                qInfo() << "Viejos: " << incX << ", " << incY;
+//                qInfo() << "Nuevos: " << new_incX << ", " << new_incY;
 
 
 
@@ -770,10 +791,10 @@ void TrajectoryGeneratorPlugin::calculate()
 
                 if(QVector3D::dotProduct((pos_i-pos_ini), scan_dir) < 0)
                 {
-                    qInfo() << "MIRA____________________________";
-                    qInfo() << pos_ini;
-                    qInfo() << pos_i;
-                    qInfo() << pos_end;
+//                    qInfo() << "MIRA____________________________";
+//                    qInfo() << pos_ini;
+//                    qInfo() << pos_i;
+//                    qInfo() << pos_end;
 
                 }
 
@@ -825,7 +846,7 @@ void TrajectoryGeneratorPlugin::calculate()
         }
         if(bad_area_i.size()>4)areas_high_diff_normals.push_back(bad_area_i);
 
-        qInfo() << areas_high_diff_normals.size();
+       // qInfo() << areas_high_diff_normals.size();
         for(int i=0; i<areas_high_diff_normals.size();i++)
         {
             int id_ini = areas_high_diff_normals[i][0];
@@ -837,18 +858,18 @@ void TrajectoryGeneratorPlugin::calculate()
                 mean_n += mean_normals[j];
             }
             mean_n = mean_n/(id_end-id_ini);
-            qInfo() << mean_n;
+          //  qInfo() << mean_n;
 
             QVector3D pos_area_ini = _traj_interpolated[id_ini].positionXYZ;
             QVector3D pos_area_end = _traj_interpolated[id_end].positionXYZ;
 
-            qInfo() << "INI: ";
-            qInfo() << _traj_interpolated[id_ini].positionXYZ;
-            qInfo() << _traj_interpolated[id_ini].orientationRPY;
+//            qInfo() << "INI: ";
+//            qInfo() << _traj_interpolated[id_ini].positionXYZ;
+//            qInfo() << _traj_interpolated[id_ini].orientationRPY;
 
-            qInfo() << "END: ";
-            qInfo() << _traj_interpolated[id_end].positionXYZ;
-            qInfo() << _traj_interpolated[id_end].orientationRPY;
+//            qInfo() << "END: ";
+//            qInfo() << _traj_interpolated[id_end].positionXYZ;
+//            qInfo() << _traj_interpolated[id_end].orientationRPY;
 
             for(int j=0; j<_pos_sensor.size()-1; j++)
             {
@@ -865,10 +886,10 @@ void TrajectoryGeneratorPlugin::calculate()
 
                 if(diff_ini<50 && diff_end<50)
                 {
-                    qInfo() << "sensor: ";
-                    qInfo() << pos_ini << " / " << rpy_ini;
-                    qInfo() << pos_end << " / " << rpy_end;
-                    qInfo() << pos_mid << " / " << rpy_mid;
+//                    qInfo() << "sensor: ";
+//                    qInfo() << pos_ini << " / " << rpy_ini;
+//                    qInfo() << pos_end << " / " << rpy_end;
+//                    qInfo() << pos_mid << " / " << rpy_mid;
 
                     //Actualizar esas poses!
                     QVector3D rpy_aux = _traj_interpolated[id_ini+(id_end-id_ini)/2].orientationRPY;
@@ -882,29 +903,29 @@ void TrajectoryGeneratorPlugin::calculate()
                     double angle_degrees = (angle*(180.0 / M_PI));
                     if (QVector3D::dotProduct(scan_dir,mean_n.normalized()) < 0) //ESTO CAMBIARLO SEGÚN LA DIRECCIÓN DE ESCANEO!!
                         angle_degrees *= -1;
-                    qInfo()<<"Quiero el sensor con un: " <<90+angle_degrees;
+               //     qInfo()<<"Quiero el sensor con un: " <<90+angle_degrees;
 
 
                     double dif_angle =-(rpy_aux.y() - (90+angle_degrees));
-                    qInfo() << dif_angle;
+              //      qInfo() << dif_angle;
                     if(dif_angle>25)dif_angle=25;
                     else if(dif_angle<-25)dif_angle=-25;
 
                     double desf_wd = working_distance; //mean_measurements[id_ini+(id_end-id_ini)/2];
-                    qInfo() << desf_wd;
+             //       qInfo() << desf_wd;
                     double incX, incY;
                     calculateDisplacement(dif_angle,desf_wd,incX,incY);
                     double alpha = (rpy_aux.y()+dif_angle) * M_PI / 180.0;
                     double new_incX= incX*cos(alpha) + incY*sin(alpha);
                     double new_incY= -incX*sin(alpha) + incY*cos(alpha);
-                    qInfo() << "Viejos: " << incX << ", " << incY;
-                    qInfo() << "Nuevos: " << new_incX << ", " << new_incY;
+//                    qInfo() << "Viejos: " << incX << ", " << incY;
+//                    qInfo() << "Nuevos: " << new_incX << ", " << new_incY;
 
                     QVector3D new_pos, new_rpy;
                     new_pos = pos_mid + QVector3D(0,-new_incY, new_incX);
                     new_rpy = rpy_aux + QVector3D(0,dif_angle,0);
-                    qInfo() << new_pos;
-                    qInfo() << new_rpy;
+//                    qInfo() << new_pos;
+//                    qInfo() << new_rpy;
 
                     QVector3D diff = new_pos - _pos_sensor[j];
                     if(QVector3D::dotProduct(diff, scan_dir) < 0)
@@ -1087,531 +1108,11 @@ void TrajectoryGeneratorPlugin::calculate()
         }
     }
 }
-/*
-void TrajectoryGeneratorPlugin::calculate()
-{
 
-    std::cout << "CALCULATE" << std::endl;
-
-
-   // getTrajectoryNodes(nodes,vel,frames,FOV,resolution,w_range,w_distance,uncertainty,tree,path,false);
-
-
-    QVector<QVector3D> pos_sensor;
-    QVector<QVector3D> rpy_sensor;
-
-
-
-
-    QVector<QVector3D> points;
-    QVector<QVector3D> normals;
-    QVector<QVector3D> measurements;
-    int points_per_profile = 100;
-    double working_distance = 270;
-    int id_string = 0;
-
-// Cargamos los datos--------------------------------------------------------------------------------
-   // Trayectoria del sensor
-   std::string path_global = "/home/sara/Descargas/PRUEBAS_DENSIDAD/traj_100/"; //portaRotu
-   std::string path_file = path_global + "traj_sensor0" + std::to_string(id_string) +".xml";
-
-   QFile file(path_file.c_str());
-   QDomDocument xmlBOM;
-   if (!file.open(QIODevice::ReadOnly )){qWarning("Error while loading file"); return;}
-   else{xmlBOM.setContent(&file);}
-   QDomElement root = xmlBOM.documentElement();
-   QDomElement Component=root.firstChild().toElement();
-   if (Component.tagName()=="POSITION")
-   {
-       QDomElement Component2=Component.firstChild().toElement();
-       while (Component2.tagName()=="XYZ")
-       {
-           QString values =Component2.firstChild().toText().data();
-           QVector<float> v_f = fromString2(values);
-
-           QVector3D posxyz_ = QVector3D(v_f[0], v_f[1], v_f[2]);
-           pos_sensor.push_back(posxyz_);
-           Component2 = Component2.nextSibling().toElement();
-
-       }
-
-   }
-   Component = Component.nextSibling().toElement();
-   if (Component.tagName()=="RPYdata")
-   {
-       QDomElement Component2=Component.firstChild().toElement();
-       while (Component2.tagName()=="RPY")
-       {
-           QString values =Component2.firstChild().toText().data();
-           QVector<float> v_f = fromString2(values);
-
-           QVector3D rpy_ = QVector3D(v_f[0], v_f[1], v_f[2]);
-          // QVector3D rpy_ = QVector3D(0,90,-3.5);
-
-           rpy_sensor.push_back(rpy_);
-           Component2 = Component2.nextSibling().toElement();
-       }
-
-   }
-
-   // Puntos
-   std::string path_1 = path_global+"step_0" + std::to_string(id_string) +"_real.txt";
-   QFile file1(path_1.c_str());
-   if (!file1.open(QIODevice::ReadOnly )){qWarning("Error while loading file"); return;}
-   while(!file1.atEnd())
-   {
-       QString line = file1.readLine();
-       QVector<float> v_f = fromString(line);
-       QVector3D points_ = QVector3D(v_f[0], v_f[1], v_f[2]);
-       points.push_back(points_);
-   }
-
-   // Normales
-  // std::string path_2 = "/home/sara/Descargas/prueba/normal_data0" + std::to_string(id_string) +".txt";
-   std::string path_2 = path_global+"normal_data0" + std::to_string(id_string) +".txt";
-
-   QFile file2(path_2.c_str());
-   if (!file2.open(QIODevice::ReadOnly )){qWarning("Error while loading file"); return;}
-   while(!file2.atEnd())
-   {
-       QString line = file2.readLine();
-       QVector<float> v_f = fromString(line);
-       QVector3D normals_ = QVector3D(v_f[0], v_f[1], v_f[2]);
-       normals.push_back(normals_);
-   }
-
-   // Medidas
-   std::string path_3 = path_global+"step_error0" + std::to_string(id_string) +".txt";
-   QFile file3(path_3.c_str());
-   if (!file3.open(QIODevice::ReadOnly )){qWarning("Error while loading file"); return;}
-   while(!file3.atEnd())
-   {
-       QString line = file3.readLine();
-       QVector<float> v_f = fromString(line);
-       QVector3D measurements_ = QVector3D(v_f[0], v_f[1], v_f[2]);
-       measurements.push_back(measurements_);
-
-   }
-
-   std::cout << "Datos cargados" << std::endl;
-
-
-
-
-// Calculamos densidades sobre la medida---------------------------------------------------------------
-
-    int frames = points.size()/points_per_profile;
-    float radio_vecindad = 3.0;
-    QVector<QVector<float>> densidades_total;
-    QVector<float> mean_density_profiles;
-
-    QVector<QVector3D> mean_normals;
-    QVector<double> mean_measurements;
-    for(int p=0; p<pos_sensor.size(); p++)
-    {
-        QVector<QVector3D> points_p = points.mid(points_per_profile*p, points_per_profile);
-        QVector<QVector3D> normals_p = normals.mid(points_per_profile*p, points_per_profile);
-        QVector<QVector3D> measurements_p = measurements.mid(points_per_profile*p, points_per_profile);
-        QVector<float> densidades(points_p.size(), 0.0);
-
-        //----------
-        QVector3D mean_n(0,0,0); int n_n=0;
-        for (QVector3D m : normals_p){
-            if (m.length() == 0) continue;
-            mean_n += m;
-            n_n++;
-           // std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        }
-        if(n_n==0)n_n=1;
-        mean_n /= n_n;
-        mean_n = mean_n.normalized();
-        mean_normals.push_back(mean_n);
-
-        double mean_m=0; int n_m=0;
-        for (QVector3D m : measurements_p){
-            if (m.z() == 0) continue;
-            mean_m += m.z();
-            n_m++;
-           // std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        }
-        if(n_m==0)n_m=1;
-        mean_m /= n_m;
-        mean_measurements.push_back(mean_m);
-
-        //-----
-
-        float mean_density = 0;
-        int n=0;
-        for(int i=0; i<points_p.size(); i++)
-        {
-
-
-           QVector3D punto_actual = points_p[i];
-           if(punto_actual == QVector3D(0,0,0))
-           {
-               densidades[i] = 0;
-               continue;
-           }
-           QVector<int> puntos_vecindad = findNeighborsInRadius(points, punto_actual, radio_vecindad);
-
-           // Calcular distancias
-           float distancia_total = 0.0;
-
-           for (int j : puntos_vecindad) {
-
-               const QVector3D& vecino = points[j];
-               float distancia = std::sqrt((vecino.x() - punto_actual.x()) * (vecino.x() - punto_actual.x()) +
-                                           (vecino.y() - punto_actual.y()) * (vecino.y() - punto_actual.y()) +
-                                           (vecino.z() - punto_actual.z()) * (vecino.z() - punto_actual.z()));
-               distancia_total += distancia;
-           }
-
-
-           // Calcular densidad (puedes ajustar esta función según tus necesidades)
-           //float densidad_punto = 1.0 / (distancia_total / puntos_vecindad.size());
-         //  float densidad_punto = puntos_vecindad.size()/(3.141592*radio_vecindad*radio_vecindad);
-           float densidad_punto = puntos_vecindad.size();
-
-           // Almacenar la densidad en el vector
-           densidades[i] = densidad_punto;
-           mean_density += densidad_punto;
-           n++;
-
-        }
-
-        if(n==0)n=1;
-        mean_density_profiles.push_back(mean_density/n);
-        densidades_total.push_back(densidades);
-
-    }
-
-    //Guardar mapa de densidades-----
-
-    cv::Mat raw_density(pos_sensor.size(), points_per_profile, CV_64FC1);
-    for (int i=0; i<pos_sensor.size();i++)
-    {
-        for (int j=0; j<points_per_profile; j++)
-        {
-            raw_density.at<double>(i,j) = densidades_total[i][j];
-        }
-    }
-
-    //-------------------------------
-
-
-    //Normalizamos las densidades
-    float max_density = *std::max_element(mean_density_profiles.begin(), mean_density_profiles.end());
-    float min_density = findMinExcludingZero(mean_density_profiles);
-
-
- //   mean_density_profiles = normVector(mean_density_profiles);
-
-//    //Calculamos desviación estándar
-//    double sum = std::accumulate(mean_density_profiles.begin(), mean_density_profiles.end(), 0.0);
-//    double m =  sum / mean_density_profiles.size();
-
-//    double accum = 0.0;
-//    std::for_each (mean_density_profiles.begin(), mean_density_profiles.end(), [&](const double d) {
-//        accum += (d - m) * (d - m);
-//    });
-
-//    double stdev = sqrt(accum / (mean_density_profiles.size()-1));
-
-//    std::cout << "STD: " << stdev << std::endl;
-
-    // A nivel de frame?
-  //  std::cout << "MAX, MIN: " << min_density << ", " << max_density << std::endl;
-    double umbral = (max_density-min_density)/1.5;
-
-    QVector<int> low_density_ids;
-    for(int i=0; i<mean_density_profiles.size(); i++)
-    {
-        if(mean_density_profiles[i] == 0) continue;
-        if(mean_density_profiles[i] < umbral)
-            low_density_ids.push_back(i);
-    }
-
-    QVector<QVector<int>>areas_low_density;
-    QVector<int> area_i;
-    area_i.push_back(low_density_ids[0]);
-    for (int i=0; i<low_density_ids.size()-1 ;i++)
-    {
-        if((low_density_ids[i+1]-low_density_ids[i])<2)
-            area_i.push_back(low_density_ids[i+1]);
-        else
-        {
-            if (area_i.size()>4)
-                areas_low_density.push_back(area_i);
-            area_i.clear();
-            area_i.push_back(low_density_ids[i+1]);
-
-        }
-    }
-
-
-//    for(int i=0; i<areas_low_density.size();i++)
-//    {
-//        std::cout << "Area "<< i << std::endl;
-//        for (int j=0; j<areas_low_density[i].size();j++)
-//        {
-//            std::cout << "NORMALES: " << mean_normals[areas_low_density[i][j]].x() << ", "
-//                                      << mean_normals[areas_low_density[i][j]].y() << ", "
-//                                      << mean_normals[areas_low_density[i][j]].z() << std::endl;
-
-//        }
-//    }
-
-    //Identificar por qué tiene baja densidad------------------------------------------------
-    QVector<QVector3D> new_sensor_position = pos_sensor;
-    QVector<QVector3D> new_sensor_orientation = rpy_sensor;
-
-    QVector3D normal_sensor(0,1,0);
-    QVector3D scan_dir(0,0,1);
-
-    QVector<int> id_nodes;
-    id_nodes.push_back(0);
-    id_nodes.push_back(areas_low_density[0][0]/2);
-    for(int id_zona=0; id_zona < areas_low_density.size(); id_zona++)
-    {
-        //Comprobar si la zona mala empieza al principio!!
-        int id_medio = areas_low_density[id_zona][0+areas_low_density[id_zona].size()/2];
-        id_nodes.push_back(id_medio);
-
-        if(id_zona+1 < areas_low_density.size())
-        {
-            int aux = areas_low_density[id_zona][areas_low_density[id_zona].size()-1] + (areas_low_density[id_zona+1][0] - areas_low_density[id_zona][areas_low_density[id_zona].size()-1])/2;
-            id_nodes.push_back(aux);
-        }
-        else
-        {
-            int aux = areas_low_density[id_zona][0] + (pos_sensor.size()-1 - areas_low_density[id_zona][areas_low_density[id_zona].size()-1]);
-            id_nodes.push_back(aux);
-        }
-    }
-
-    id_nodes.push_back(pos_sensor.size()-1);
-  //  _pos_sensor = pos_sensor;
-  //  _rpy_sensor = rpy_sensor;
-
-    //Recorrer áreas y calcular la media de las normales en esas áreas!-------------------------
-    QVector<QVector3D> mean_normals_area;
-    for(int i=0; i< id_nodes.size()-1; i++)
-    {
-        int i_ini = id_nodes[i];
-        int i_end = id_nodes[i+1];
-        QVector3D mean_n(0,0,0);
-        for (int j=i_ini; j<i_end;j++)
-        {
-            mean_n += mean_normals[j];
-//            if (i==2)
-//                std::cout <<mean_normals[j].x() <<", " << mean_normals[j].y() <<", " << mean_normals[j].z() << std::endl;
-
-        }
-        mean_normals_area.push_back(mean_n/(i_end-i_ini));
-
-
-        if(i==id_nodes.size()-2)
-            mean_normals_area.push_back(mean_n/(i_end-i_ini));
-
-//        std::cout << mean_normals_area[i].x() <<", " << mean_normals_area[i].y() <<", " << mean_normals_area[i].z() << std::endl;
-
-
-    }
-
-    ;
-    //-------------------------------------------------------------------------------------------
-
-    for (int i=0; i<id_nodes.size(); i++)
-    {
-        int id_m=i;
-
-//        //----PROVISIONAL---
-//        //TA MAAAAL
-//        for (int j=0; j<id_nodes.size()-1; j++)
-//        {
-//            if (i>id_nodes[j] & i<=id_nodes[j+1])
-//            {
-//                id_m=j;
-//            }
-//        }
-
-        //------------------
-        int id = id_nodes[i];
-        QVector3D pos_i = pos_sensor[id];
-        QVector3D rpy_i = rpy_sensor[id];
-
-        double desf_wd = mean_measurements[id];
-        while(desf_wd==0)desf_wd=mean_measurements[id++];
-        id = id_nodes[i];
-
-//        pos_i.setY(-desf_wd+500);
-
-        //UTILIZAR LA MEDIA DE LAS NORMALESSS!
-
-        double dot_product = QVector3D::dotProduct(normal_sensor,mean_normals_area[id_m].normalized());
-        double angle=std::acos(dot_product);
-        double angle_degrees = (angle*(180.0 / M_PI));
-        if (QVector3D::dotProduct(scan_dir,mean_normals_area[id_m].normalized()) < 0) //ESTO CAMBIARLO SEGÚN LA DIRECCIÓN DE ESCANEO!!
-            angle_degrees *= -1;
-
-
-//        std::cout <<"i: " << i <<" : "<<  mean_normals_area[id_m].x() <<", " <<
-//                     mean_normals_area[id_m].y() <<", " <<
-//                     mean_normals_area[id_m].z()<< std::endl;
-        if(std::find(low_density_ids.begin(), low_density_ids.end(), id_nodes[i]) != low_density_ids.end())
-        {
-            rpy_i.setY(90+angle_degrees);
-
-            ///------
-            double incX = desf_wd*sin(angle_degrees/180*M_PI);
-            double c = 2*desf_wd*sin((angle_degrees/2)/180*M_PI);
-            double incY = sqrt(c*c - incX*incX);
-
-            std::cout << "POSX: " << pos_i.z() << std::endl;
-            std::cout << "POSY: " << pos_i.y() << std::endl;
-            std::cout << "ANGLE: " << angle_degrees << std::endl;
-            std::cout << "d: " << desf_wd << std::endl;
-
-            std::cout << "INCX: " << incX << std::endl;
-            std::cout << "INCY: " << incY << std::endl;
-            pos_i.setZ(pos_i.z()+incX);
-            pos_i.setY(pos_i.y()+incY);
-        }
-
-        ///------
-        _pos_sensor.push_back(pos_i);
-        _rpy_sensor.push_back(rpy_i);
-
-    }
-
-//    for(int id_zona=0; id_zona < areas_low_density.size(); id_zona++)
-//    {
-//        //Area id_zona
-//        QVector3D mean_normals_area(0,0,0);
-//        int n_n=0;
-//        for(int i = 0; i<areas_low_density[id_zona].size(); i++)
-//        {
-//            mean_normals_area += mean_normals[areas_low_density[id_zona][i]];
-//            n_n++;
-//        }
-//        mean_normals_area /= n_n;
-//        QVector3D resta = normal_sensor - mean_normals_area;
-//        if (resta.length()>0.3)
-//        {
-
-//            std::cout << "AJUSTAR ORIENTACIÓN NECESARIA" <<std::endl;
-//            QVector3D pos_ini = pos_sensor[areas_low_density[id_zona][0]];
-//            QVector3D pos_end = pos_sensor[areas_low_density[id_zona][areas_low_density[id_zona].size()-1]];
-//            QVector3D pos_mid = pos_sensor[areas_low_density[id_zona][0+areas_low_density[id_zona].size()/2]];
-
-//            QVector3D rpy_ini = rpy_sensor[areas_low_density[id_zona][0]];
-//            QVector3D rpy_end = rpy_sensor[areas_low_density[id_zona][areas_low_density[id_zona].size()-1]];
-//            QVector3D rpy_mid = rpy_sensor[areas_low_density[id_zona][0+areas_low_density[id_zona].size()/2]];
-
-//            QVector3D step_pos1 = (pos_mid - pos_ini)/areas_low_density[id_zona].size()/2;
-//            QVector3D step_pos2 = (pos_end - pos_mid)/areas_low_density[id_zona].size()/2;
-
-
-//            double dot_product = QVector3D::dotProduct(normal_sensor,mean_normals_area.normalized());
-//            double angle=std::acos(dot_product);
-//            double angle_degrees = (angle*(180.0 / M_PI));
-
-//            if (QVector3D::dotProduct(scan_dir,mean_normals_area) < 0) //ESTO CAMBIARLO SEGÚN LA DIRECCIÓN DE ESCANEO!!
-//            {
-//                angle_degrees *= -1;
-//                //scan_dir=QVector3D(0,0,-1);
-
-//            }
-//            for(int i = 0; i<areas_low_density[id_zona].size(); i++)
-//            {
-
-//                new_sensor_orientation[areas_low_density[id_zona][i]].setY(90+angle_degrees);
-//              //  std::cout << mean_measurements[areas_low_density[id_zona][i]] << std::endl;
-
-//                double c = 2*mean_measurements[areas_low_density[id_zona][i]]*sin(angle/2);
-//                double incX = (sin(angle)*mean_measurements[areas_low_density[id_zona][i]]);
-//                double incY = sqrt(c*c + incX*incX);
-
-////                new_sensor_position[areas_low_density[id_zona][i]] = new_sensor_position[areas_low_density[id_zona][i]]
-////                        + incX*scan_dir - incY*normal_sensor;
-
-//            }
-
-
-//        }
-
-
-//    }
-    //--------------------------------------------------------------------------------------
-
-
-//    for (int i=0; i<pos_sensor.size();i++)
-//    {
-//        if (i==areas_low_density[0][0])
-//        {
-//            QVector3D pos_ini = pos_sensor[i-1];
-//            QVector3D pos_end = pos_sensor[areas_low_density[0][areas_low_density[0].size()-1]];
-//            QVector3D step = (pos_end-pos_ini)/(areas_low_density[0].size()*2);
-//            for(int j=0; j<areas_low_density[0].size()*2; j++)
-//            {
-//                new_sensor_position.push_back(pos_ini);
-//                pos_ini = pos_ini+step;
-//                new_sensor_orientation.push_back(rpy_sensor[i]);
-//            }
-//        }
-//        else if(i>areas_low_density[0][0] && i<areas_low_density[0][areas_low_density[0].size()-1])
-//            continue;
-//        else
-//        {
-//            new_sensor_position.push_back(pos_sensor[i]);
-//            new_sensor_orientation.push_back(rpy_sensor[i]);
-//        }
-//    }
-
-
-
-
-    // Guardamos datos--------------------------------------------------------------------------
-    std::cout << "Escribiendo datos..." << std::endl;
-
-    // Crear un objeto QFile para el archivo de salida
-    std::string path_densidades = path_global+"densidades2.txt";
-    QFile outputFile(QString::fromStdString(path_densidades));
-
-    // Abrir el archivo en modo de escritura (también se puede utilizar QIODevice::WriteOnly)
-    if (outputFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        // Crear un objeto QTextStream para escribir en el archivo
-        QTextStream stream(&outputFile);
-
-        // Iterar sobre cada QVector en densidades_total
-        for (const QVector<float>& densidades : densidades_total) {
-            // Iterar sobre cada valor en el QVector
-            for (float valor : densidades) {
-                // Escribir el valor en el archivo seguido de un salto de línea
-                stream << valor << "\n";
-            }
-        }
-
-        // Cerrar el archivo después de escribir
-        outputFile.close();
-        std::cout << "Fin" << std::endl;
-
-    }
-
-    std::string name_raw_density = path_global+"densidades.raw";
-    writeMatRaw(QString::fromStdString(name_raw_density),'w',raw_density);
-
-
-    std::string path_new_traj = "/step_0"+std::to_string(id_string)+"_new_traj.xml";
-    saveTraj(path_global.c_str(),
-             path_new_traj.c_str(),_pos_sensor, _rpy_sensor); //new_rpy_sensor_orientation
-
-
-}
-
-*/
 void TrajectoryGeneratorPlugin::postcalculate()
 {
+
+    std::string path_global = _path.toStdString();
 
    qInfo() << "POSTCALCULATE: Saving data";
     // Guardamos datos--------------------------------------------------------------------------
@@ -1648,17 +1149,35 @@ void TrajectoryGeneratorPlugin::postcalculate()
     std::string path_new_traj = "/step_0"+std::to_string(0)+"_new_traj.xml";
     saveTraj(path_global.c_str(),
              path_new_traj.c_str(),_pos_sensor, _rpy_sensor); //new_rpy_sensor_orientation
+
+
+    std::string path_new_simple = "/new_traj/step_0"+std::to_string(0)+"_simple.xml";
+    saveTraj(path_global.c_str(),
+             path_new_simple.c_str(),_pos_sensor, _rpy_sensor); //new_rpy_sensor_orientation
+
+
+
 }
 
 void TrajectoryGeneratorPlugin::initPlugin(int argc, char **argv, QVector<QVector3D> pos_sensor, QVector<QVector3D> rpy_sensor)
 {
     std::cout << "INIT" << std::endl;
+    _isFirstIteration = true;
 
 }
 
 void TrajectoryGeneratorPlugin::getTrajectory(QVector<QVector3D> &pos_sensor, QVector<QVector3D> &rpy_sensor)
 {
-//    pos_sensor = -pos_sensor;
-//    rpy_sensor = _rpy_sensor;
+    pos_sensor = _pos_sensor;
+    rpy_sensor = _rpy_sensor;
 }
 
+void TrajectoryGeneratorPlugin::setCustomFlag(bool isFirstIteration)
+{
+    _isFirstIteration = isFirstIteration;
+}
+
+void TrajectoryGeneratorPlugin::setPath(QString path)
+{
+    _path = path;
+}

@@ -27,7 +27,10 @@ public:
     virtual void postcalculate() override;
     virtual void initPlugin(int argc, char **argv,  QVector<QVector3D> pos_sensor,  QVector<QVector3D> rpy_sensor) override;
 
-    void getTrajectory(QVector<QVector3D> &pos_sensor, QVector<QVector3D> &rpy_sensor);
+    virtual void setCustomFlag(bool isFirstIteration) override;
+    virtual void setPath(QString path) override;
+
+    virtual void getTrajectory(QVector<QVector3D> &pos_sensor, QVector<QVector3D> &rpy_sensor) override;
 
 private:
    QVector<QVector3D> _pos_sensor;
@@ -44,10 +47,12 @@ private:
    cv::Mat _density_map_raw;
    cv::Mat _normal_scan_image;
 
-
+   bool _isFirstIteration;
 
    QVector<pointTraj> _traj_simple_new;
    QVector<pointTraj> _traj_interpolated_new;
+
+   QString _path;
 
 };
 

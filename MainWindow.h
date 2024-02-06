@@ -152,6 +152,8 @@ signals:
     void button_defect_selection_predefined_clicked(QString file_model, QString file_saving, vtkSmartPointer<vtkPolyData> polydata, QString type, double depth,float deg_rot, QString personalized_type, crackDef_params* params);
     void button_scan_all_clicked(int,KDNode,double,double,double,double,double,double,double,QString);
     void button_dragMode_clicked(bool, renderVTK);
+    void button_traj_generator_plugin_clicked(TriPluginInterface *plugin/*, QVector<QVector3Dd> pos_dataTraj, QVector<QVector3Dd> rpy_dataTraj, double vel, int frames, double fov, double resolution, double w_range, double w_distance, double uncertainty, KDNode tree, QString path*/);
+
 
 private slots:
 
@@ -215,6 +217,8 @@ private slots:
     void on_actionSetDragMode_triggered(bool checked);
     void on_actionScan_all_piece_triggered();
     void on_actionSmooth_stl_triggered();
+
+
 
     void dragEnterEvent(QDragEnterEvent *event);
     void dropEvent(QDropEvent *event);

@@ -965,6 +965,7 @@
    <addaction name="actionGet_Trajectory_from"/>
    <addaction name="actionInsert_Defect"/>
    <addaction name="actionPredefined_defect"/>
+   <addaction name="actionTrajectory_Generator"/>
    <addaction name="separator"/>
    <addaction name="actionPointsWindow"/>
    <addaction name="separator"/>
@@ -1156,6 +1157,10 @@
    </property>
   </action>
   <action name="actionTrajectory_Generator">
+   <property name="icon">
+    <iconset resource="MyRes.qrc">
+     <normaloff>:/MyRes/images/trajGenerator2.png</normaloff>:/MyRes/images/trajGenerator2.png</iconset>
+   </property>
    <property name="text">
     <string>Trajectory Generator</string>
    </property>

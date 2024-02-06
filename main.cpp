@@ -8,6 +8,7 @@ Q_DECLARE_METATYPE(QVector<trajectoryNode>)
 Q_DECLARE_METATYPE(GenTraj_options)
 Q_DECLARE_METATYPE(renderVTK)
 Q_DECLARE_METATYPE(vtkSmartPointer<vtkPolyData>)
+//Q_DECLARE_METATYPE(TriPluginInterface)
 
 
 int main(int argc, char *argv[])
@@ -19,7 +20,7 @@ int main(int argc, char *argv[])
     qRegisterMetaType<GenTraj_options>("GenTraj_options");
     qRegisterMetaType<vtkSmartPointer<vtkPolyData>>("vtkSmartPointer<vtkPolyData>");
     qRegisterMetaType<renderVTK>("renderVTK");
-
+  //  qRegisterMetaType<TriPluginInterface>("TriPluginInterface");
 
     QApplication a(argc, argv);
     a.setApplicationName("TriPlay");

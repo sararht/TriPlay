@@ -9,6 +9,8 @@
 #include "cv_perlin_noise/PerlinNoise.h"
 #include <QtXml>
 
+#include "plugins/TriPluginInterface/triplugininterface.h"
+
 #include<opencv2/opencv.hpp>
 
 #ifndef PI
@@ -48,6 +50,8 @@ private slots:
     void trajectoryGenerator(GenTraj_options,QVector<trajectoryNode>,QVector3D,double,double,double,double,double,double,double,KDNode, QString);
     //void trajectoryGenerator2(GenTraj_options,QVector<trajectoryNode>,QVector3D,double,double,double,double,double,double,double,KDNode, QString);
     void trajectoryGenerator4(GenTraj_options,QVector<trajectoryNode>,QVector3D,double,double,double,double,double,double,double,KDNode, QString);
+
+    void trajGeneratorPlugin(TriPluginInterface *plugin);
 
     void scanAllPiece(int n_steps, KDNode tree, double vel, double frames, double FOV, double resolution, double w_range, double w_distance, double uncertainty, QString path);
     void updateDragMode(bool checked, renderVTK renderer_vtk);

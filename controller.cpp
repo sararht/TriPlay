@@ -1096,8 +1096,56 @@ QVector<QVector3D> InterpolateBSpline(const QVector<QVector3D>& controlPoints, i
 }
 
 
+void controller::trajGeneratorPlugin(TriPluginInterface *plugin/*,QVector<QVector3Dd> pos_dataTraj,QVector<QVector3Dd> rpy_dataTraj,double vel,int frames, double fov,double resolution,double w_range, double w_distance,double uncertainty,KDNode tree, QString path*/)
+{
+    qInfo() << "HOLA";
+//    double vel = 0.3;
+//    double fov = 50;
+//    double resolution = 100;
+//    int frames = 500;
+//    double w_range = 150;
+//    double w_distance = 250;
+//    double uncertainty = 20;
+
+//    int n_iteraciones = 2;
+//    plugin->setCustomFlag(true);
+//    //QString path ="/home/sara/Descargas/PRUEBAS_DENSIDAD/traj_100/";
+//    for(int i=0; i<n_iteraciones; i++)
+//    {
+//        //scan_finished = false;
+//        if (i>0)
+//          plugin->setCustomFlag(false);
+
+//        qInfo() << path;
+//        plugin->setPath(path);
+//        plugin->precalculate();
+//        plugin->calculate();
+//        plugin->postcalculate();
+
+//        //Hacer el escaneo
+//        QVector<QVector3D> pos_sensor_i, rpy_sensor_i;
+//        plugin->getTrajectory(pos_sensor_i, rpy_sensor_i);
+//        QVector<trajectoryNode> nodes_load;
+//        QVector<QVector3Dd> pos_dataTraj;
+//        for(int id=0; id<pos_sensor_i.size();id++)
+//        {
+
+//            QQuaternion q = QQuaternion::fromEulerAngles(rpy_sensor_i[id].y(),rpy_sensor_i[id].z(),rpy_sensor_i[id].x());
+//            QVector3Dd posxyz_ = QVector3Dd(pos_sensor_i[id].x(), pos_sensor_i[id].y(), pos_sensor_i[id].z());
+//            pos_dataTraj.push_back(posxyz_);
+
+//            trajectoryNode node_aux(posxyz_,q);
+//            nodes_load.push_back(node_aux);
+//        }
+
+//        path = path + "new_traj/";
+
+//        //emit
+//        getTrajectoryNodes(nodes_load, vel, frames, fov, resolution, w_range, w_distance, uncertainty, tree, path, false);
+//    }
 
 
+}
 
 void controller::trajectoryGenerator4(GenTraj_options opt, QVector<trajectoryNode> nodes, QVector3D normal_plane_, double vel, double frames, double FOV, double resolution, double w_range, double w_distance, double uncertainty, KDNode tree, QString path)
 {
