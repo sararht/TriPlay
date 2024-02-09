@@ -17,7 +17,8 @@ public:
     virtual void initPlugin(int argc, char** argv, QVector<QVector3D> pos_sensor, QVector<QVector3D> rpy_sensor) = 0;
     virtual void setCustomFlag(bool flag) = 0;
     virtual void setPath(QString path) = 0;
-    virtual void getTrajectory(QVector<QVector3D> &pos_sensor, QVector<QVector3D> &rpy_sensor) = 0;
+    virtual void getTrajectory(QVector<QVector3D> &pos_sensor, QVector<QVector3D> &rpy_sensor, double &fov, double &vel, double &frames, int &resolution, double &uncertainty) = 0;
+
 
 
 private:

@@ -30,7 +30,7 @@ public:
     virtual void setCustomFlag(bool isFirstIteration) override;
     virtual void setPath(QString path) override;
 
-    virtual void getTrajectory(QVector<QVector3D> &pos_sensor, QVector<QVector3D> &rpy_sensor) override;
+    virtual void getTrajectory(QVector<QVector3D> &pos_sensor, QVector<QVector3D> &rpy_sensor, double &fov, double &vel, double &frames, int &resolution, double &uncertainty) override;
 
 private:
    QVector<QVector3D> _pos_sensor;
@@ -42,6 +42,12 @@ private:
    QVector<QVector3D> _normal_map;
    QVector<QVector3D> _normal_scan_map;
    QVector<QVector3D> _scan_image;
+
+   double _vel=0;
+   double _fov=0;
+   double _resolution=0;
+   int _frames=0;
+   double _uncertainty = 0;
 
    QVector<QVector<float>> _density_map;
    cv::Mat _density_map_raw;

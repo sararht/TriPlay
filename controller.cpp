@@ -302,7 +302,9 @@ void saveData(QString path, QString file_name, QVector<QVector<QVector3Dd>> tota
     file.close();
 }
 
-void saveTraj(QString path, QString file_name, QVector<QVector3Dd> pos_data, QVector<QVector3Dd> rpy_data, bool complete =  true)
+void saveTraj(QString path, QString file_name, QVector<QVector3Dd> pos_data, QVector<QVector3Dd> rpy_data,
+              double FPS, double vel, double FOV, int PPP, double uncertainty,
+              bool complete =  true)
 {
     QDir dir;
 
@@ -332,7 +334,17 @@ void saveTraj(QString path, QString file_name, QVector<QVector3Dd> pos_data, QVe
                 xmlWriter.writeTextElement("RPY", QString::number(rpy_data[i].x())+", "+QString::number(rpy_data[i].y())+", "+QString::number(rpy_data[i].z()));
             xmlWriter.writeEndElement();
 
+            xmlWriter.writeTextElement("FPS", QString::number(FPS));
+            xmlWriter.writeTextElement("Velocity", QString::number(vel));
+            xmlWriter.writeTextElement("FOV", QString::number(FOV));
+            xmlWriter.writeTextElement("Resolution", QString::number(PPP));
+            xmlWriter.writeTextElement("Uncertainty", QString::number(uncertainty));
+
+
             xmlWriter.writeEndElement();
+
+
+
 
         }
         else
@@ -356,7 +368,9 @@ void saveTraj(QString path, QString file_name, QVector<QVector3Dd> pos_data, QVe
 void controller::getTrajectoryNodesFromFile(QVector<QVector3Dd> pos_dataTraj,QVector<QVector3Dd> rpy_dataTraj,double fov,double resolution,double w_range, double w_distance,double uncertainty,KDNode tree, QString path)
 {
 
-    std::cout <<"HEY"<<std::endl;
+
+
+
     if (pos_dataTraj.size()<2)
     {
         //EMIT ui->listWidget->addItem("PUNTOS INSUFICIENTES");
@@ -474,6 +488,14 @@ void controller::getTrajectoryNodesFromFile(QVector<QVector3Dd> pos_dataTraj,QVe
 
 void controller::getTrajectoryNodes(QVector<trajectoryNode> nodes, double vel, double frames, double FOV, double resolution, double w_range, double w_distance, double uncertainty, KDNode tree, QString path, bool onlyEven = false)
 {
+
+
+     qInfo() << "Executing trajectory with: ";
+     qInfo() << "Velocity: " << vel << "m/s";
+     qInfo() << "Resolution: " << resolution << "points/profile";
+     qInfo() << "FOV: " << FOV << "º";
+     qInfo() << "FPS: " << frames << "frames/s";
+     qInfo() << "Uncertainty: " << uncertainty << "μm";
 
     //-GUARDAR DATOS CONJUNTOS----------------------------------------------------------------
     QVector<QVector<double>> distances_sensor_all;
@@ -750,9 +772,9 @@ void controller::getTrajectoryNodes(QVector<trajectoryNode> nodes, double vel, d
     saveData(path, QString::fromStdString(name3.str()),total_data_sensor_error_all);
     saveData(path, QString::fromStdString(name4.str()),total_points_real_error_all);
     saveData(path, QString::fromStdString(name5.str()),normal_data_sensor_all);
-    saveTraj(path, QString::fromStdString(name_traj.str()),pos_sensor_buena_all,rpy_sensor_buena_all);
+    saveTraj(path, QString::fromStdString(name_traj.str()),pos_sensor_buena_all,rpy_sensor_buena_all,frames, vel, FOV, resolution, uncertainty);
 
-    saveTraj(path, QString::fromStdString(name_traj_simple.str()),pos_sensor_buena_all,rpy_sensor_buena_all,false);
+    saveTraj(path, QString::fromStdString(name_traj_simple.str()),pos_sensor_buena_all,rpy_sensor_buena_all,frames,  vel, FOV, resolution, uncertainty, false);
 //            writeMatRaw(QString::fromStdString(name_raw.str()),'w',raw);
 
 //    writeMatRaw(QString::fromStdString(name_raw_error.str()),'w',raw_error);
@@ -2195,7 +2217,7 @@ void controller::trajectoryGenerator(GenTraj_options opt, QVector<trajectoryNode
 
             std::stringstream name_traj;
             name_traj << "/traj_sensor" << id_node<< ".xml";
-            saveTraj(path, QString::fromStdString(name_traj.str()),new_sensor_position2, new_sensor_orientation); //new_rpy_sensor_orientation
+            saveTraj(path, QString::fromStdString(name_traj.str()),new_sensor_position2, new_sensor_orientation,frames,  vel, FOV, resolution, uncertainty); //new_rpy_sensor_orientation
 
             std::cout << "LISTO" << std::endl;
 

@@ -1294,6 +1294,16 @@ void MainWindow::on_actionGet_Trajectory_from_triggered()
 
         if (readFile && suffix=="xml")
         {
+
+            int frames = ui->fpsSpinBox->value();
+            double fov = ui->fovSpinBox->value();
+            double resolution = ui->resolutionSpinBox->value();
+            double w_range = ui->workingRangeSpinBox->value();
+            double w_distance = ui->workingDistanceSpinBox->value();
+            double vel = ui->velSpinBox->value();
+            double uncertainty = ui->uncertaintySpinBox->value();
+
+
             // Extract the root markup
             QDomElement root = xmlBOM.documentElement();
             QString type = root.tagName();
@@ -1335,18 +1345,14 @@ void MainWindow::on_actionGet_Trajectory_from_triggered()
 
                 }
 
+                if (Component.tagName()=="FPS") frames = Component.text().toDouble();
+                if (Component.tagName()=="Velocity") vel = Component.text().toDouble();
+                if (Component.tagName()=="FOV") fov = Component.text().toDouble();
+                if (Component.tagName()=="Resolution") resolution = Component.text().toInt();
+                if (Component.tagName()=="Uncertainty") uncertainty = Component.text().toDouble();
+
                 Component = Component.nextSibling().toElement();
-
             }
-
-
-             int frames = ui->fpsSpinBox->value();
-             double fov = ui->fovSpinBox->value();
-             double resolution = ui->resolutionSpinBox->value();
-             double w_range = ui->workingRangeSpinBox->value();
-             double w_distance = ui->workingDistanceSpinBox->value();
-             double vel = ui->velSpinBox->value();
-             double uncertainty = ui->uncertaintySpinBox->value();
 
              ui->progressBar->show();
              ui->button_stop->show();
@@ -1447,6 +1453,10 @@ void MainWindow::on_actionTrajectory_Generator_triggered()
     if (!loadPlugin("libtrajectorygeneratorplugin.so")) {std::cout << "PLUGIN NOT LOADED" << std::endl;}
     else
     {
+
+        //Generar trayectoria inicial y ejecutarla!!!
+
+
         QStringList arguments = qApp->arguments();
         QCoreApplication *app = QCoreApplication::instance();
         int argc = app->arguments().at(0).toInt();
@@ -1457,10 +1467,6 @@ void MainWindow::on_actionTrajectory_Generator_triggered()
         int n_iteraciones = 2;
         pluginInterface->setCustomFlag(true);
         QString path ="/home/sara/Descargas/PRUEBAS_DENSIDAD/traj_100/";
-
-//        emit button_traj_generator_plugin_clicked(pluginInterface);
-
-
 
         for(int i=0; i<n_iteraciones; i++)
         {
@@ -1476,7 +1482,19 @@ void MainWindow::on_actionTrajectory_Generator_triggered()
 
             //Hacer el escaneo
             QVector<QVector3D> pos_sensor_i, rpy_sensor_i;
-            pluginInterface->getTrajectory(pos_sensor_i, rpy_sensor_i);
+            double fov,vel, frames, uncertainty;
+            int resolution;
+            pluginInterface->getTrajectory(pos_sensor_i, rpy_sensor_i, fov, vel, frames, resolution, uncertainty);
+            if(fov==0)
+            {
+                qInfo() << "Using data from spin boxes";
+                vel = ui->velSpinBox->value();
+                fov = ui->fovSpinBox->value();
+                resolution = ui->resolutionSpinBox->value();
+                frames = ui->fpsSpinBox->value();
+                uncertainty = ui->uncertaintySpinBox->value();
+            }
+
             QVector<trajectoryNode> nodes_load;
             QVector<QVector3Dd> pos_dataTraj;
             for(int id=0; id<pos_sensor_i.size();id++)
@@ -1490,13 +1508,9 @@ void MainWindow::on_actionTrajectory_Generator_triggered()
                 nodes_load.push_back(node_aux);
             }
 
-            double vel = 0.3;
-            double fov = 50;
-            double resolution = 100;
-            int frames = 500;
+
             double w_range = ui->workingRangeSpinBox->value();
             double w_distance = ui->workingDistanceSpinBox->value();
-            double uncertainty = ui->uncertaintySpinBox->value();
 
             path = path + "new_traj/";
 

@@ -13,7 +13,9 @@
 #include <QQuaternion>
 #include <eigen3/Eigen/Eigen>
 
-void saveTraj(QString path, QString file_name, QVector<QVector3D> pos_data, QVector<QVector3D> rpy_data, bool complete =  true)
+void saveTraj(QString path, QString file_name, QVector<QVector3D> pos_data, QVector<QVector3D> rpy_data,
+              double FPS, double vel, double FOV, int PPP, double uncertainty,
+              bool complete =  true)
 {
     QDir dir;
 
@@ -42,6 +44,12 @@ void saveTraj(QString path, QString file_name, QVector<QVector3D> pos_data, QVec
             for (int i=0; i<rpy_data.size(); i++)
                 xmlWriter.writeTextElement("RPY", QString::number(rpy_data[i].x())+", "+QString::number(rpy_data[i].y())+", "+QString::number(rpy_data[i].z()));
             xmlWriter.writeEndElement();
+
+            xmlWriter.writeTextElement("FPS", QString::number(FPS));
+            xmlWriter.writeTextElement("Velocity", QString::number(vel));
+            xmlWriter.writeTextElement("FOV", QString::number(FOV));
+            xmlWriter.writeTextElement("Resolution", QString::number(PPP));
+            xmlWriter.writeTextElement("Uncertainty", QString::number(uncertainty));
 
             xmlWriter.writeEndElement();
 
@@ -271,7 +279,8 @@ void TrajectoryGeneratorPlugin::precalculate()
     _normal_scan_map.clear();
     _scan_image.clear();
     _density_map.clear();
-    //------------------------------
+
+     //------------------------------
 
 
 
@@ -297,37 +306,52 @@ void TrajectoryGeneratorPlugin::precalculate()
        else{xmlBOM22.setContent(&file22);}
        QDomElement root22 = xmlBOM22.documentElement();
        QDomElement Component22=root22.firstChild().toElement();
-       if (Component22.tagName()=="POSITION")
+
+       while(!Component22.isNull())
        {
-           QDomElement Component2=Component22.firstChild().toElement();
-           while (Component2.tagName()=="XYZ")
+           if (Component22.tagName()=="POSITION")
            {
-               QString values =Component2.firstChild().toText().data();
-               QVector<float> v_f = fromString2(values);
+               QDomElement Component2=Component22.firstChild().toElement();
+               while (Component2.tagName()=="XYZ")
+               {
+                   QString values =Component2.firstChild().toText().data();
+                   QVector<float> v_f = fromString2(values);
 
-               QVector3D posxyz_ = QVector3D(v_f[0], v_f[1], v_f[2]);
-               pos_sensor_simple.push_back(posxyz_);
-               Component2 = Component2.nextSibling().toElement();
-           }
-       }
-
-       Component22 = Component22.nextSibling().toElement();
-       if (Component22.tagName()=="RPYdata")
-       {
-           QDomElement Component2=Component22.firstChild().toElement();
-           while (Component2.tagName()=="RPY")
-           {
-               QString values =Component2.firstChild().toText().data();
-               QVector<float> v_f = fromString2(values);
-
-               QVector3D rpy_ = QVector3D(v_f[0], v_f[1], v_f[2]);
-              // QVector3D rpy_ = QVector3D(0,90,-3.5);
-
-               rpy_sensor_simple.push_back(rpy_);
-               Component2 = Component2.nextSibling().toElement();
+                   QVector3D posxyz_ = QVector3D(v_f[0], v_f[1], v_f[2]);
+                   pos_sensor_simple.push_back(posxyz_);
+                   Component2 = Component2.nextSibling().toElement();
+               }
            }
 
+           if (Component22.tagName()=="RPYdata")
+           {
+               QDomElement Component2=Component22.firstChild().toElement();
+               while (Component2.tagName()=="RPY")
+               {
+                   QString values =Component2.firstChild().toText().data();
+                   QVector<float> v_f = fromString2(values);
+
+                   QVector3D rpy_ = QVector3D(v_f[0], v_f[1], v_f[2]);
+                  // QVector3D rpy_ = QVector3D(0,90,-3.5);
+
+                   rpy_sensor_simple.push_back(rpy_);
+                   Component2 = Component2.nextSibling().toElement();
+               }
+
+           }
+
+
+           if (Component22.tagName()=="FPS") _frames = Component22.text().toDouble();
+           if (Component22.tagName()=="Velocity") _vel = Component22.text().toDouble();
+           if (Component22.tagName()=="FOV") _fov = Component22.text().toDouble();
+           if (Component22.tagName()=="Resolution") _resolution = Component22.text().toInt();
+           if (Component22.tagName()=="Uncertainty") _uncertainty = Component22.text().toDouble();
+           Component22 = Component22.nextSibling().toElement();
+
+
        }
+
+
        for(int i=0; i<pos_sensor_simple.size();i++)
        {
            pointTraj aux;
@@ -1148,12 +1172,12 @@ void TrajectoryGeneratorPlugin::postcalculate()
 
     std::string path_new_traj = "/step_0"+std::to_string(0)+"_new_traj.xml";
     saveTraj(path_global.c_str(),
-             path_new_traj.c_str(),_pos_sensor, _rpy_sensor); //new_rpy_sensor_orientation
+             path_new_traj.c_str(),_pos_sensor, _rpy_sensor, _frames,_vel,_fov,_resolution,_uncertainty); //new_rpy_sensor_orientation
 
 
     std::string path_new_simple = "/new_traj/step_0"+std::to_string(0)+"_simple.xml";
     saveTraj(path_global.c_str(),
-             path_new_simple.c_str(),_pos_sensor, _rpy_sensor); //new_rpy_sensor_orientation
+             path_new_simple.c_str(),_pos_sensor, _rpy_sensor, _frames,_vel,_fov,_resolution,_uncertainty); //new_rpy_sensor_orientation
 
 
 
@@ -1166,10 +1190,15 @@ void TrajectoryGeneratorPlugin::initPlugin(int argc, char **argv, QVector<QVecto
 
 }
 
-void TrajectoryGeneratorPlugin::getTrajectory(QVector<QVector3D> &pos_sensor, QVector<QVector3D> &rpy_sensor)
+void TrajectoryGeneratorPlugin::getTrajectory(QVector<QVector3D> &pos_sensor, QVector<QVector3D> &rpy_sensor, double &fov, double &vel, double &frames, int &resolution, double &uncertainty)
 {
     pos_sensor = _pos_sensor;
     rpy_sensor = _rpy_sensor;
+    fov = _fov;
+    frames = _frames;
+    resolution = _resolution;
+    uncertainty = _uncertainty;
+    vel = _vel;
 }
 
 void TrajectoryGeneratorPlugin::setCustomFlag(bool isFirstIteration)
