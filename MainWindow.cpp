@@ -444,7 +444,8 @@ MainWindow::MainWindow(QWidget *parent)
     //BUILD THE TREE---------------------------------------------------------------------------------------------
 //    name_file = "/home/sara/sararht/TESIS/Codigo/modelos/PUERTA_DELANTERA_IZQ_sub.stl"; //pieza_achatada_grande2.stl"; //chapa2.stl";///pinzas/fuchosa_r.stl";//chapa2.stl" ; //PUERTA_DELANTERA_IZQ.stl
 //    name_file = "../simulador/stl_examples/PUERTA_DELANTERA_IZQ_0_3.stl";
-    name_file = "/home/sara/sararht/TESIS/Codigo/modelos/pieza_achatada_grande_90.stl";
+  //  name_file = "/home/sara/sararht/TESIS/Codigo/modelos/pieza_achatada_grande_90.stl";
+    name_file =  "/home/sara/sararht/TESIS/Codigo/modelos/Porta rotulador 3D STL/Penholder/penholder_Chamfer003.stl";
 
     std::vector<float> coords, normals;
     std::vector<unsigned int> tris, solids;
@@ -1464,10 +1465,21 @@ void MainWindow::on_actionTrajectory_Generator_triggered()
         char **argv = new char*[1];
         argv[0]= "/home/sara/sararht/TESIS/Codigo/simulador/QT/build-simulador-Qt_5_14_2_gcc_64-Release/simulador";
         //
-        int n_iteraciones = 2;
+        int n_iteraciones = 5;
         pluginInterface->setCustomFlag(true);
-        QString path ="/home/sara/Descargas/PRUEBAS_DENSIDAD/traj_100/";
 
+
+        QMessageBox::information(this, "INFO", "Select path of first trajectory");
+        QString path = QFileDialog::getExistingDirectory(this, "QFileDialog.getSaveDirectory", "");
+        path =path+"/";
+
+        if (!path.isEmpty() && !path.isNull()){}
+
+        else
+        {
+            qWarning() << "File not valid";
+            return;
+        }
         for(int i=0; i<n_iteraciones; i++)
         {
             //scan_finished = false;
@@ -1494,6 +1506,7 @@ void MainWindow::on_actionTrajectory_Generator_triggered()
                 frames = ui->fpsSpinBox->value();
                 uncertainty = ui->uncertaintySpinBox->value();
             }
+
 
             QVector<trajectoryNode> nodes_load;
             QVector<QVector3Dd> pos_dataTraj;
@@ -1529,8 +1542,9 @@ void MainWindow::on_actionTrajectory_Generator_triggered()
 
 //            }
             std::cout << "Presiona Enter para continuar...";
-                std::string line;
-                std::getline(std::cin, line);
+            std::string line;
+            std::getline(std::cin, line);
+
             qInfo() << "Acabó escaneo anterior";
 
        }

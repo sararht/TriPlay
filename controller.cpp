@@ -506,6 +506,9 @@ void controller::getTrajectoryNodes(QVector<trajectoryNode> nodes, double vel, d
     QVector<QVector<QVector3Dd>> normal_data_sensor_all;
     QVector<QVector3Dd> pos_sensor_buena_all;
     QVector<QVector3Dd> rpy_sensor_buena_all;
+
+    cv::Mat raw_complete;
+    cv::Mat raw_luminosidad_complete;
     //-----------------------------------------------------------------
 
     if (nodes.size()<2)
@@ -536,6 +539,10 @@ void controller::getTrajectoryNodes(QVector<trajectoryNode> nodes, double vel, d
         }
         double start = omp_get_wtime();
 
+        raw_complete = cv::Mat::zeros(frames_totales, resolution, CV_64FC1);
+        raw_luminosidad_complete = cv::Mat::zeros(frames_totales, resolution, CV_64FC1);
+
+
 
     double x_fov;
 
@@ -544,6 +551,7 @@ void controller::getTrajectoryNodes(QVector<trajectoryNode> nodes, double vel, d
         QVector<QVector3Dd> pos_sensor;
         QVector<QVector3Dd> rpy_sensor;
 
+        int frames_ant = 0;
 
         for (int j=0; j<nodes.size()-1; j++)
         {
@@ -656,8 +664,9 @@ void controller::getTrajectoryNodes(QVector<trajectoryNode> nodes, double vel, d
 
                         if (total_data_sensor_error[i][r].z() != 0)
                             raw_luminosidad.at<double>(i,r)=1;
-                    }
 
+
+                    }
 
 
                    // emit frameDone(frames_i, frames_totales,new_sensor_model);
@@ -690,6 +699,7 @@ void controller::getTrajectoryNodes(QVector<trajectoryNode> nodes, double vel, d
             name_raw_perlin << path.toStdString() << "/step_" << std::setw(2) << std::setfill('0') << j << "_orig_perlin.raw";
             name_raw_luminosidad << path.toStdString() << "/step_" << std::setw(2) << std::setfill('0') << j << "_luminosidad.raw";
 
+
 //            saveData(path, QString::fromStdString(name.str()),total_data_sensor);
 //            saveData(path, QString::fromStdString(name2.str()),total_points_real);
 //            saveData(path, QString::fromStdString(name3.str()),total_data_sensor_error);
@@ -707,6 +717,7 @@ void controller::getTrajectoryNodes(QVector<trajectoryNode> nodes, double vel, d
             normal_data_sensor_all += normal_data_sensor;
             pos_sensor_buena_all += pos_sensor_buena;
             rpy_sensor_buena_all += rpy_sensor_buena;
+
 
 
             //-----------------------------------------------------------------------------------------------
@@ -734,7 +745,7 @@ void controller::getTrajectoryNodes(QVector<trajectoryNode> nodes, double vel, d
 
             cv::multiply(perlin_noise_raw,raw_luminosidad,perlin_noise_raw);
 
-            writeMatRaw(QString::fromStdString(name_raw_perlin.str()),'w',(raw_error+ perlin_noise_raw/256 *0.02*100));
+       //     writeMatRaw(QString::fromStdString(name_raw_perlin.str()),'w',(raw_error+ perlin_noise_raw/256 *0.02*100));
 
             ///---------------------------
 
@@ -754,7 +765,7 @@ void controller::getTrajectoryNodes(QVector<trajectoryNode> nodes, double vel, d
 
     //GUARDARLO TODO JUNTO------------------------------------------------------------------------
     //SAVE DATA
-    std::stringstream name, name2, name3, name4, name5, name_traj, name_traj_simple, name_raw, name_raw_error,name_raw_perlin, name_raw_luminosidad;
+    std::stringstream name, name2, name3, name4, name5, name_traj, name_traj_simple, name_raw_complete,name_raw_luminosidad_complete, name_raw, name_raw_error,name_raw_perlin, name_raw_luminosidad;
     name << "/step00.txt";
     name2 << "/step_00_real.txt";
     name3 << "/step_error00.txt";
@@ -762,6 +773,9 @@ void controller::getTrajectoryNodes(QVector<trajectoryNode> nodes, double vel, d
     name5 << "/normal_data00" << ".txt";
     name_traj << "/traj_sensor00.xml";
     name_traj_simple << "/step_00_traj.txt";
+    name_raw_complete << path.toStdString() << "/step_00_orig.raw";
+    name_raw_luminosidad_complete << path.toStdString() << "/step_00_luminosidad.raw";
+
 //    name_raw << path.toStdString() << "/step_" <<"_conjunto" << "_orig_no_error.raw";
 //    name_raw_error << path.toStdString() << "/step_" <<"_conjunto" << "_orig.raw";
 //    name_raw_perlin << path.toStdString() << "/step_" << "_conjunto" << "_orig_perlin.raw";
@@ -775,7 +789,24 @@ void controller::getTrajectoryNodes(QVector<trajectoryNode> nodes, double vel, d
     saveTraj(path, QString::fromStdString(name_traj.str()),pos_sensor_buena_all,rpy_sensor_buena_all,frames, vel, FOV, resolution, uncertainty);
 
     saveTraj(path, QString::fromStdString(name_traj_simple.str()),pos_sensor_buena_all,rpy_sensor_buena_all,frames,  vel, FOV, resolution, uncertainty, false);
-//            writeMatRaw(QString::fromStdString(name_raw.str()),'w',raw);
+
+
+    for (int i=0; i<total_data_sensor_error_all.size();i++)
+    {
+        for(int r=0; r<resolution; r++)
+        {
+            raw_complete.at<double>(i,r)=total_data_sensor_error_all[i][r].z()*100;
+            if (total_data_sensor_error_all[i][r].z() != 0)
+                raw_luminosidad_complete.at<double>(i,r)=1;
+        }
+    }
+
+
+
+    writeMatRaw(QString::fromStdString(name_raw_complete.str()),'w',raw_complete);
+    writeMatRaw(QString::fromStdString(name_raw_luminosidad_complete.str()),'w', raw_luminosidad_complete);
+
+    //            writeMatRaw(QString::fromStdString(name_raw.str()),'w',raw);
 
 //    writeMatRaw(QString::fromStdString(name_raw_error.str()),'w',raw_error);
 //    writeMatRaw(QString::fromStdString(name_raw_luminosidad.str()),'w',raw_luminosidad*20);
