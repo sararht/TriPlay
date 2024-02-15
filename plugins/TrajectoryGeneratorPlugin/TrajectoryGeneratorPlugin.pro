@@ -1,5 +1,6 @@
 QT       += gui core gui
 QMAKE_LFLAGS += -rdynamic
+QMAKE_CXXFLAGS += -fopenmp
 
 TEMPLATE = lib
 CONFIG += plugin

@@ -588,7 +588,7 @@ void controller::getTrajectoryNodes(QVector<trajectoryNode> nodes, double vel, d
 
             double start_ = omp_get_wtime();
 
-            std::cout << "FRAMES: "<<vFrames[j] << std::endl;
+            std::cout << "Scanning... "<<vFrames[j] << std::endl;
 
             volatile bool flag_cancel=false;
             int NUM_THREADS = 10;
@@ -751,7 +751,7 @@ void controller::getTrajectoryNodes(QVector<trajectoryNode> nodes, double vel, d
 
 
 
-            printf("Node took %f seconds\n", omp_get_wtime() - start_);
+      //      printf("Node took %f seconds\n", omp_get_wtime() - start_);
 
             if(cancelling)
             {

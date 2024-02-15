@@ -13,6 +13,8 @@
 #include <QQuaternion>
 #include <eigen3/Eigen/Eigen>
 
+#include <QElapsedTimer>
+
 void saveTraj(QString path, QString file_name, QVector<QVector3D> pos_data, QVector<QVector3D> rpy_data,
               double FPS, double vel, double FOV, int PPP, double uncertainty,
               bool complete =  true)
@@ -20,7 +22,6 @@ void saveTraj(QString path, QString file_name, QVector<QVector3D> pos_data, QVec
     QDir dir;
     if(!dir.exists(path))
     {
-        qInfo()<<"HOLA";
         dir.mkdir(path);
     }
 
@@ -180,12 +181,12 @@ QVector<int> findNeighborsInRadius(const QVector<QVector3D>& pointCloud, const Q
         if (point == QVector3D(0,0,0))
             continue;
 
-        float distance = std::sqrt((point.x() - center.x()) * (point.x() - center.x()) +
-                                   (point.y() - center.y()) * (point.y() - center.y()) +
-                                   (point.z() - center.z()) * (point.z() - center.z()));
+//        float distance = std::sqrt((point.x() - center.x()) * (point.x() - center.x()) +
+//                                   (point.y() - center.y()) * (point.y() - center.y()) +
+//                                   (point.z() - center.z()) * (point.z() - center.z()));
+         float distance = (point - center).lengthSquared();
 
-
-        if (distance <= radius) {
+        if (distance <= radius*radius) {
             #pragma omp critical
             {
                  neighbors.append(i);
@@ -196,61 +197,49 @@ QVector<int> findNeighborsInRadius(const QVector<QVector3D>& pointCloud, const Q
 
     return neighbors;
 }
-float findMinExcludingZero(const QVector<float>& values) {
+//float findMinExcludingZero(const QVector<float>& values) {
+//    float minNonZero = std::numeric_limits<float>::max();  // Inicializar con un valor grande
+//    bool foundNonZero = false;
+
+//    for (float value : values) {
+//        if (value != 0) {
+//            foundNonZero = true;
+//            minNonZero = std::min(minNonZero, value);
+//        }
+//    }
+
+//    if (foundNonZero) {
+//        return minNonZero;
+//    } else {
+//        // Todos los valores son 0
+//        return 0.0;  // O algún otro valor predeterminado según tus necesidades
+//    }
+//}
+
+void findMinMaxExcludingZero(const QVector<QVector<float>>& values, float& min_result, float& max_result) {
     float minNonZero = std::numeric_limits<float>::max();  // Inicializar con un valor grande
+    float maxNonZero = std::numeric_limits<float>::lowest();  // Inicializar con un valor pequeño
     bool foundNonZero = false;
 
-    for (float value : values) {
-        if (value != 0) {
-            foundNonZero = true;
-            minNonZero = std::min(minNonZero, value);
+    for (const auto& innerVector : values) {
+        for (float value : innerVector) {
+            if (value != 0) {
+                foundNonZero = true;
+                minNonZero = std::min(minNonZero, value);
+                maxNonZero = std::max(maxNonZero, value);
+            }
         }
     }
 
     if (foundNonZero) {
-        return minNonZero;
+        min_result = minNonZero;
+        max_result = maxNonZero;
     } else {
         // Todos los valores son 0
-        return 0.0;  // O algún otro valor predeterminado según tus necesidades
+        min_result = 0.0;  // O algún otro valor predeterminado según tus necesidades
+        max_result = 0.0;  // O algún otro valor predeterminado según tus necesidades
     }
 }
-static QVector<float> normVector(QVector<float> v)
-{
-
-    float max_density = *std::max_element(v.begin(), v.end());
-    float min_density = findMinExcludingZero(v);
-
-    QVector<float> v_norm;
-    for (int i=0;i<v.size();i++)
-        v_norm.push_back((v[i]-min_density)/(max_density-min_density));
-
-    return v_norm;
-}
-QVector3D calcularMediana(QVector<QVector3D> &normales) {
-    int n = normales.size();
-
-    // Copiar el vector para no modificar el original
-    QVector<QVector3D> copiaNormales = normales;
-
-    // Ordenar el vector copia
-    std::sort(copiaNormales.begin(), copiaNormales.end(), [](const QVector3D &a, const QVector3D &b) {
-        return a.length() < b.length();  // Ordenar por longitud
-    });
-
-    // Calcular la mediana
-    QVector3D mediana;
-    if (n % 2 == 0) {
-        // Si hay un número par de elementos, la mediana es el promedio de los dos elementos del medio
-        mediana = 0.5 * (copiaNormales[n / 2 - 1] + copiaNormales[n / 2]);
-    } else {
-        // Si hay un número impar de elementos, la mediana es el elemento del medio
-        mediana = copiaNormales[n / 2];
-    }
-
-    return mediana;
-}
-
-
 
 //Angle en grados
 void calculateDisplacement(double angle_deg, double distance, double& displacementX, double& displacementY) {
@@ -285,16 +274,12 @@ void TrajectoryGeneratorPlugin::precalculate()
      //------------------------------
 
 
-
     std::string path_global = _path.toStdString();
-    qInfo() << "PRECALCULATE: Loading data...";
-
+    qInfo() << "TRAJECTORY GENERATOR PLUGIN. PRECALCULATE: Loading data...";
 
     int id_string = 0;
     QVector<QVector3D> pos_sensor, rpy_sensor;
     QVector<QVector3D> pos_sensor_simple, rpy_sensor_simple;
-
-
 
     ///-----------
 
@@ -304,7 +289,7 @@ void TrajectoryGeneratorPlugin::precalculate()
 
        QFile file22(path_file22.c_str());
        QDomDocument xmlBOM22;
-       if (!file22.open(QIODevice::ReadOnly )){qWarning("Error while loading file"); return;}
+       if (!file22.open(QIODevice::ReadOnly )){qWarning("TRAJECTORY GENERATOR PLUGIN: Error while loading file"); return;}
        else{xmlBOM22.setContent(&file22);}
        QDomElement root22 = xmlBOM22.documentElement();
        QDomElement Component22=root22.firstChild().toElement();
@@ -504,19 +489,15 @@ void TrajectoryGeneratorPlugin::calculate()
 {
     bool first_it = _isFirstIteration;
 
-    if(first_it) qInfo() << "Primera iteración";
-    else qInfo() << "NO primera iteración";
-
-
     int id_string = 0;
     QVector3D normal_sensor(0,1,0);
     QVector3D scan_dir(0,0,1);
 
-    qInfo() << "CALCULATE: Calculating density map...";
+    qInfo() << "TRAJECTORY GENERATOR PLUGIN. CALCULATE: Calculating density map...";
     // Calculamos densidades sobre la medida---------------------------------------------------------------
 
     float radio_vecindad = 3.0;
-    QVector<QVector<float>> densidades_total;
+  //  QVector<QVector<float>> densidades_total;
     QVector<float> mean_density_profiles;
 
     QVector<QVector3D> mean_normals;
@@ -528,8 +509,6 @@ void TrajectoryGeneratorPlugin::calculate()
 
     for(int p=0; p<_traj_interpolated.size(); p++)
     {
-
-
         //--- DIFERENCIA DE NORMALES---
         double mean_aux=0;
         int n_ma=0;
@@ -544,7 +523,6 @@ void TrajectoryGeneratorPlugin::calculate()
         mean_scan_normals.push_back(mean_aux/n_ma);
 
         //-----------------------------
-
         QVector<QVector3D> points_p = _pointcloud.mid(points_per_profile*p, points_per_profile);
         QVector<QVector3D> normals_p = _normal_map.mid(points_per_profile*p, points_per_profile);
         QVector<QVector3D> measurements_p = _scan_image.mid(points_per_profile*p, points_per_profile);
@@ -586,9 +564,7 @@ void TrajectoryGeneratorPlugin::calculate()
         mean_p /= n_n;
         mean_pointcloud.push_back(mean_p);
 
-        float mean_density = 0;
-        int n=0;
-
+        #pragma omp parallel for
         for(int i=0; i<points_p.size(); i++)
         {
            QVector3D punto_actual = points_p[i];
@@ -598,6 +574,7 @@ void TrajectoryGeneratorPlugin::calculate()
                densidades[i] = 0;
                continue;
            }
+
 
            QVector<int> puntos_vecindad = findNeighborsInRadius(_pointcloud, punto_actual, radio_vecindad);
 
@@ -617,15 +594,32 @@ void TrajectoryGeneratorPlugin::calculate()
          //  float densidad_punto = puntos_vecindad.size()/(3.141592*radio_vecindad*radio_vecindad);
            float densidad_punto = puntos_vecindad.size();
            densidades[i] = densidad_punto;
-           mean_density += densidad_punto;
-           n++;
+        }
+
+        _density_map.push_back(densidades);
+    }
+
+    //Normalizamos las densidades
+//    float mean_density = 0;
+//    int n=0;
+    float max_density, min_density;
+    findMinMaxExcludingZero(_density_map, min_density, max_density); // Obtener el mínimo y el máximo valor en values
+    for(int i=0; i<_density_map.size(); i++)
+    {
+        float mean_density = 0;
+        int n=0;
+        for(int j=0; j<_density_map[i].size(); j++)
+        {
+            if(_density_map[i][j]==0)continue;
+
+            _density_map[i][j] = _density_map[i][j]/(max_density-min_density);
+            mean_density += _density_map[i][j];
+            n++;
         }
         if(n==0)n=1;
         mean_density_profiles.push_back(mean_density/n);
-        densidades_total.push_back(densidades);
-        _density_map.push_back(densidades);
-
     }
+
     //Guardar mapa de densidades-----
     cv::Mat raw_density(_traj_interpolated.size(), points_per_profile, CV_64FC1);
     for (int i=0; i<_traj_interpolated.size();i++)
@@ -636,36 +630,23 @@ void TrajectoryGeneratorPlugin::calculate()
         }
     }
     _density_map_raw = raw_density;
-
-    qInfo() << "CALCULATE: Density map calculated.";
+    qInfo() << "TRAJECTORY GENERATOR PLUGIN. CALCULATE: Density map calculated.";
 
 
     QVector<QVector<int>>areas_low_density;
     if (first_it)
     {
-        //Normalizamos las densidades
-        float max_density = *std::max_element(mean_density_profiles.begin(), mean_density_profiles.end());
-        float min_density = findMinExcludingZero(mean_density_profiles);
-        double umbral = (max_density-min_density)/1.5;
-//        qInfo() << "UMBRAL: " << umbral;
-//        qInfo() << "max: " << max_density;
-//        qInfo() << "min: " << min_density;
-
-
         QVector<int> low_density_ids;
         for(int i=0; i<mean_density_profiles.size(); i++)
         {
             if(mean_density_profiles[i] == 0) continue;
             QVector3D resta = normal_sensor - mean_normals[i];
-//            qInfo() << "RESTA: " << resta;
-//            qInfo() << "lenght: " <<resta.length();
-//            qInfo() << "----------";
-            if(/*mean_density_profiles[i] < umbral &&*/ (resta.length()>0.5))
+
+            if(/*mean_density_profiles[i] < 0.6 && (resta.length()>0.3)*/(resta.length()>0.5)) //(resta.length()>0.5)
             {
                 low_density_ids.push_back(i);
             }
         }
-
         //Buscamos áreas de baja densidad
         QVector<int> area_i;
         area_i.push_back(low_density_ids[0]);
@@ -702,11 +683,10 @@ void TrajectoryGeneratorPlugin::calculate()
             _pos_sensor.push_back( _traj_simple[i].positionXYZ);
             _rpy_sensor.push_back( _traj_simple[i].orientationRPY);
 
-
             //AQUÍ METO PUNTOS SI HAY MUCHA DISTANCIA
             //TENGO QUE MIRAR A VER LAS ZONAS SEGUN EL MAPA DE NORMALES
             //ASEGURAR QUE SIEMPRE TIENE MOVIMIENTO DE AVANCE?
-            if(diff.length()>100)
+            if(diff.length()>1000) //100
             {
 
                 // Si están muy separados entre sí los puntos meto un punto intermedio
@@ -749,7 +729,6 @@ void TrajectoryGeneratorPlugin::calculate()
                     rpy_aux.setX(0);
                 }
 
-
                 double angle_aux = 90-rpy_aux.y();
                 if(angle_aux<0)angle_aux*=-1;
                 normal_sensor = QVector3D(0,cos(angle_aux/180*M_PI), sin(angle_aux/180*M_PI));
@@ -791,15 +770,6 @@ void TrajectoryGeneratorPlugin::calculate()
                 pos_i.setY(pos_i.y()+desf_wd*normal_sensor.y()-incY);
 
 
-                if(QVector3D::dotProduct((pos_i-pos_ini), scan_dir) < 0)
-                {
-//                    qInfo() << "MIRA____________________________";
-//                    qInfo() << pos_ini;
-//                    qInfo() << pos_i;
-//                    qInfo() << pos_end;
-
-                }
-
                 _pos_sensor.push_back(pos_i);
                 _rpy_sensor.push_back(rpy_i);
             }
@@ -814,16 +784,16 @@ void TrajectoryGeneratorPlugin::calculate()
         QVector<int> bad_areas;
         for(int i=0; i<mean_scan_normals.size(); i++)
         {
-             if (fabs(mean_scan_normals[i])>0.45)
+             if (fabs(mean_scan_normals[i])>0.3)
              {
                  bad_areas.push_back(i);
-
              }
         }
         QVector<QVector<int>>areas_high_diff_normals;
         QVector<int> bad_area_i;
 
-        if(bad_area_i.size()>0)
+        //PROBLEMA AQUIII
+        if(bad_areas.size()>0)
         {
             bad_area_i.push_back(bad_areas[0]);
             for(int i=0; i<bad_areas.size()-1;i++)
@@ -844,6 +814,8 @@ void TrajectoryGeneratorPlugin::calculate()
         }
         else
             qInfo()<<"Not bad areas founded in difference normal map";
+
+        qInfo() << "BAD AREAS: " << areas_high_diff_normals.size();
 
         for(int i=0; i<areas_high_diff_normals.size();i++)
         {
@@ -875,7 +847,8 @@ void TrajectoryGeneratorPlugin::calculate()
                 double diff_ini = (pos_ini-pos_area_ini).length();
                 double diff_end = (pos_end-pos_area_end).length();
 
-                if(diff_ini<50 && diff_end<50)
+                qInfo() << "DIFS: " <<diff_ini << ", " << diff_end;
+                if((fabs(diff_ini)+fabs(diff_end))/2 <20/*diff_ini<20 && diff_end<20*/) //50 & 50
                 {
 
                     //Actualizar esas poses!
@@ -889,8 +862,13 @@ void TrajectoryGeneratorPlugin::calculate()
 
 
                     double dif_angle =-(rpy_aux.y() - (90+angle_degrees));
-                    if(dif_angle>25)dif_angle=25;
-                    else if(dif_angle<-25)dif_angle=-25;
+                    qInfo()<<"ANGLE: " << dif_angle;
+
+                    if(dif_angle>10)dif_angle=10;
+                    else if(dif_angle<-10)dif_angle=-10;
+
+                    qInfo()<<"ANGLE: " << dif_angle;
+
 
                     double desf_wd = working_distance; //mean_measurements[id_ini+(id_end-id_ini)/2];
                     double incX, incY;
@@ -899,17 +877,23 @@ void TrajectoryGeneratorPlugin::calculate()
                     double new_incX= incX*cos(alpha) + incY*sin(alpha);
                     double new_incY= -incX*sin(alpha) + incY*cos(alpha);
 
+                    //ESTO ESTA MAAAAAL
                     QVector3D new_pos, new_rpy;
                     new_pos = pos_mid + QVector3D(0,-new_incY, new_incX);
                     new_rpy = rpy_aux + QVector3D(0,dif_angle,0);
 
                     QVector3D diff = new_pos - _pos_sensor[j];
-                    if(QVector3D::dotProduct(diff, scan_dir) < 0)
-                    {
+                 //   if(QVector3D::dotProduct(diff, scan_dir) < 0)
+                 //   {
                         _pos_sensor[j]=new_pos;
                         _rpy_sensor[j]=new_rpy;
-                    }
+                 //   }
+                    break;
 
+                }
+                else
+                {
+                    //Metemos un punto intermedio
                 }
 
             }
@@ -921,19 +905,7 @@ void TrajectoryGeneratorPlugin::calculate()
 
         //----------------------------------------------------------------------
 
-        for(int i=0; i<_pos_sensor.size(); i++)
-        {
-//            if(_rpy_sensor[i].z() !=0 )
-//            {
-//                _rpy_sensor[i].setY(180-_rpy_sensor[i].y());
-//                _rpy_sensor[i].setZ(0);
-//            }
-//            if(_rpy_sensor[i].x() !=0 )
-//            {
-//                _rpy_sensor[i].setX(0);
-//            }
 
-        }
 
         normal_sensor = QVector3D(0,1,0);
         for(int i=1; i<_pos_sensor.size()-1; i++)

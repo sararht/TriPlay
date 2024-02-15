@@ -444,8 +444,8 @@ MainWindow::MainWindow(QWidget *parent)
     //BUILD THE TREE---------------------------------------------------------------------------------------------
 //    name_file = "/home/sara/sararht/TESIS/Codigo/modelos/PUERTA_DELANTERA_IZQ_sub.stl"; //pieza_achatada_grande2.stl"; //chapa2.stl";///pinzas/fuchosa_r.stl";//chapa2.stl" ; //PUERTA_DELANTERA_IZQ.stl
 //    name_file = "../simulador/stl_examples/PUERTA_DELANTERA_IZQ_0_3.stl";
-  //  name_file = "/home/sara/sararht/TESIS/Codigo/modelos/pieza_achatada_grande_90.stl";
-    name_file =  "/home/sara/sararht/TESIS/Codigo/modelos/Porta rotulador 3D STL/Penholder/penholder_Chamfer003.stl";
+    name_file = "/home/sara/sararht/TESIS/Codigo/modelos/pieza_achatada_grande_90.stl";
+ //   name_file =  "/home/sara/sararht/TESIS/Codigo/modelos/Porta rotulador 3D STL/Penholder/penholder_Chamfer003.stl";
 
     std::vector<float> coords, normals;
     std::vector<unsigned int> tris, solids;

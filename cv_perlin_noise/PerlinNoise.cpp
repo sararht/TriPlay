@@ -22,9 +22,9 @@ void shuffle_array(int arr[], int n)
     // Shuffling our array
     std::random_shuffle(arr, arr + n);
 
-    for (int i = 0; i < n; ++i)
-           std:: cout << arr[i] << " ";
-        std::cout << std::endl;
+//    for (int i = 0; i < n; ++i)
+//           std:: cout << arr[i] << " ";
+//        std::cout << std::endl;
 
 }
 
