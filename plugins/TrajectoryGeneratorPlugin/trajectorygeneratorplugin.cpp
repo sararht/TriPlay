@@ -15,6 +15,62 @@
 
 #include <QElapsedTimer>
 
+// Función para convertir ángulos de grados a radianes
+double deg2rad(double degrees) {
+    return degrees * M_PI / 180.0;
+}
+
+// Función para calcular la matriz de rotación a partir de los ángulos RPY
+Eigen::Matrix3d rpy_to_rotation_matrix(double roll, double pitch, double yaw) {
+    // Convertir ángulos a radianes
+    roll = deg2rad(roll);
+    pitch = deg2rad(pitch);
+    yaw = deg2rad(yaw);
+
+    // Calcular las matrices de rotación individuales
+    Eigen::Matrix3d R_roll;
+    R_roll << 1, 0, 0,
+              0, cos(roll), -sin(roll),
+              0, sin(roll), cos(roll);
+
+    Eigen::Matrix3d R_pitch;
+    R_pitch << cos(pitch), 0, sin(pitch),
+               0, 1, 0,
+               -sin(pitch), 0, cos(pitch);
+
+    Eigen::Matrix3d R_yaw;
+    R_yaw << cos(yaw), -sin(yaw), 0,
+             sin(yaw), cos(yaw), 0,
+             0, 0, 1;
+
+    // Calcular la matriz de rotación total
+    Eigen::Matrix3d R_total = R_yaw * R_pitch * R_roll;
+
+    return R_total;
+}
+
+// Función para calcular un vector unitario en la dirección de los ángulos RPY
+Eigen::Vector3d unit_vector_from_rpy(double roll, double pitch, double yaw) {
+    // Obtener la matriz de rotación
+    Eigen::Matrix3d R = rpy_to_rotation_matrix(roll, pitch, yaw);
+
+    // Extraer el primer vector de la matriz de rotación (primera columna)
+    Eigen::Vector3d unit_vector = R.col(0);
+
+    return unit_vector;
+}
+
+// Función para calcular un vector perpendicular a la orientación RPY
+Eigen::Vector3d perpendicular_vector_from_rpy(double roll, double pitch, double yaw) {
+    // Obtener la matriz de rotación
+    Eigen::Matrix3d R = rpy_to_rotation_matrix(roll, pitch, yaw);
+
+    // Extraer el tercer vector de la matriz de rotación (tercera columna)
+    Eigen::Vector3d perpendicular_vector = R.col(2);
+
+    return perpendicular_vector;
+}
+
 void saveTraj(QString path, QString file_name, QVector<QVector3D> pos_data, QVector<QVector3D> rpy_data,
               double FPS, double vel, double FOV, int PPP, double uncertainty,
               bool complete =  true)
@@ -669,6 +725,12 @@ void TrajectoryGeneratorPlugin::calculate()
     }
 
 
+    //COSAS A TENER EN CUENTA
+    // QUE NO SOLAPE CON NODOS ANTERIORES(POS_INI) O SIGUIENTES(POS_END)
+    // AL METER UN NODO INTERMEDIO NO CONSIDERAR SOLO LA DISTANCIA ENTRE NODOS, SI NO TAMBIÉN ÁNGULOS Y PUNTOS DE ESCANEO, PORQUE PUEDEN SOLAPAR
+    // IGUAL ESE PUNTO INTERMEDIO NO PUEDE TENER DIRECTAMENTE LA ORIENTACIÓN QUE ME DE LA GANA, HACER ALGUNA COMPROBACIÓN
+
+
     if (!first_it)
     {
         //Retocar los puntos y añadir puntos intermedios
@@ -686,7 +748,7 @@ void TrajectoryGeneratorPlugin::calculate()
             //AQUÍ METO PUNTOS SI HAY MUCHA DISTANCIA
             //TENGO QUE MIRAR A VER LAS ZONAS SEGUN EL MAPA DE NORMALES
             //ASEGURAR QUE SIEMPRE TIENE MOVIMIENTO DE AVANCE?
-            if(diff.length()>1000) //100
+            if(diff.length()>200) //100
             {
 
                 // Si están muy separados entre sí los puntos meto un punto intermedio
@@ -729,45 +791,87 @@ void TrajectoryGeneratorPlugin::calculate()
                     rpy_aux.setX(0);
                 }
 
-                double angle_aux = 90-rpy_aux.y();
-                if(angle_aux<0)angle_aux*=-1;
-                normal_sensor = QVector3D(0,cos(angle_aux/180*M_PI), sin(angle_aux/180*M_PI));
+//                double angle_aux = 90-rpy_aux.y();
+//                if(angle_aux<0)angle_aux*=-1;
+//                normal_sensor = QVector3D(0,cos(angle_aux/180*M_PI), sin(angle_aux/180*M_PI));
 
-                if (QVector3D::dotProduct(scan_dir,mean_n.normalized()) < 0) //ESTO CAMBIARLO SEGÚN LA DIRECCIÓN DE ESCANEO!!
-                {
-                    normal_sensor.setZ(-normal_sensor.z());
-                }
+//                if (QVector3D::dotProduct(scan_dir,mean_n.normalized()) < 0) //ESTO CAMBIARLO SEGÚN LA DIRECCIÓN DE ESCANEO!!
+//                {
+//                    normal_sensor.setZ(-normal_sensor.z());
+//                }
 
-                double desf_wd = working_distance - mean_m;
+//                double desf_wd = working_distance - mean_m;
 
+//                double dot_product = QVector3D::dotProduct(normal_sensor,mean_n.normalized());
+//                double angle=std::acos(dot_product);
+//                double angle_degrees = (angle*(180.0 / M_PI));
+
+//                if (QVector3D::dotProduct(scan_dir,mean_n.normalized()) < 0) //ESTO CAMBIARLO SEGÚN LA DIRECCIÓN DE ESCANEO!!
+//                    angle_degrees *= -1;
+
+              //  if(angle_degrees>10) angle_degrees = 10;
+             //   if(angle_degrees<10) angle_degrees = -10;
+
+                ///------
+//                double incX = working_distance*sin(angle_degrees/180*M_PI);
+//                double c = 2*working_distance*sin((angle_degrees/2)/180*M_PI);
+//                double incY = sqrt(c*c - incX*incX);
+
+//                double alpha = (rpy_aux.y()+angle_degrees) * M_PI / 180.0;
+//                double new_incX= incX*cos(alpha) + incY*sin(alpha);
+//                double new_incY= -incX*sin(alpha) + incY*cos(alpha);
+
+                normal_sensor = QVector3D(0,1,0);
                 double dot_product = QVector3D::dotProduct(normal_sensor,mean_n.normalized());
                 double angle=std::acos(dot_product);
                 double angle_degrees = (angle*(180.0 / M_PI));
-
                 if (QVector3D::dotProduct(scan_dir,mean_n.normalized()) < 0) //ESTO CAMBIARLO SEGÚN LA DIRECCIÓN DE ESCANEO!!
                     angle_degrees *= -1;
 
-                if(angle_degrees>10) angle_degrees = 10;
-                if(angle_degrees<10) angle_degrees = -10;
 
-                ///------
-                double incX = working_distance*sin(angle_degrees/180*M_PI);
-                double c = 2*working_distance*sin((angle_degrees/2)/180*M_PI);
-                double incY = sqrt(c*c - incX*incX);
+                double dif_angle =-(rpy_aux.y() - (90+angle_degrees));
+                qInfo()<<"ANGLE: " << dif_angle;
 
-                double alpha = (rpy_aux.y()+angle_degrees) * M_PI / 180.0;
-                double new_incX= incX*cos(alpha) + incY*sin(alpha);
-                double new_incY= -incX*sin(alpha) + incY*cos(alpha);
+                if(dif_angle>10)dif_angle=10;
+                else if(dif_angle<-10)dif_angle=-10;
+
+                qInfo()<<"ANGLE: " << dif_angle;
+
+                double incrementoX = working_distance*sin(dif_angle*M_PI/180); //Esto en la direccion perpendicular a la nueva orientación
+                double incrementoY =  working_distance*(1-std::cos(dif_angle*M_PI/180)); //Esto en la dirección de la nueva orientación
+                double desf_wd = working_distance - mean_measurements[id_mid];
+
+
+              //  double incrementoX = working_distance*sin(angle_degrees*M_PI/180); //Esto en la direccion perpendicular a la nueva orientación
+              //  double incrementoY =  working_distance*(1-std::cos(angle_degrees*M_PI/180)); //Esto en la dirección de la nueva orientación
+
+                qInfo() <<"NORAML SENSOR: " <<normal_sensor;
 
 
                 QVector3D pos_i = _traj_interpolated[id_mid].positionXYZ;
-                QVector3D rpy_i = rpy_aux;//_traj_interpolated[id_mid].orientationRPY;
+                QVector3D rpy_i = rpy_aux + QVector3D(0,dif_angle,0);//_traj_interpolated[id_mid].orientationRPY
 
+                Eigen::Vector3d direction_vector = unit_vector_from_rpy(rpy_i.x(), rpy_i.y(), rpy_i.z());
+                QVector3D paralel_vector(direction_vector[1], direction_vector[2], direction_vector[0]);
+                if(rpy_i.y() <= 90 && paralel_vector.z()<0) paralel_vector.setZ(-paralel_vector.z());
+                if(rpy_i.y() > 90 && paralel_vector.z()>0) paralel_vector.setZ(-paralel_vector.z());
+                if(paralel_vector.y()>0)paralel_vector.setY(-paralel_vector.y());
 
-                rpy_i.setY(rpy_aux.y()+angle_degrees);
+                qInfo() <<"paralel SENSOR: " <<paralel_vector;
 
-                pos_i.setZ(pos_i.z()+incX+desf_wd*normal_sensor.z());
-                pos_i.setY(pos_i.y()+desf_wd*normal_sensor.y()-incY);
+                Eigen::Vector3d perpendicular_vector_aux = perpendicular_vector_from_rpy(rpy_i.x(), rpy_i.y(), rpy_i.z());
+
+                QVector3D perp_vector(perpendicular_vector_aux[1], perpendicular_vector_aux[2], perpendicular_vector_aux[0]);
+                if(perp_vector.y()>0)perp_vector.setY(-perp_vector.y());
+                if(perp_vector.z()>0 && paralel_vector.z()>0) perp_vector.setZ(-perp_vector.z());
+                if(perp_vector.z()<0 && paralel_vector.z()<0) perp_vector.setZ(-perp_vector.z());
+
+//                pos_i.setZ(pos_i.z()+incX+desf_wd*normal_sensor.z());
+//                pos_i.setY(pos_i.y()+desf_wd*normal_sensor.y()-incY);
+
+                pos_i = pos_i + fabs(incrementoX)*perp_vector
+                              + fabs(incrementoY)*paralel_vector
+                              - desf_wd*paralel_vector;
 
 
                 _pos_sensor.push_back(pos_i);
@@ -784,7 +888,7 @@ void TrajectoryGeneratorPlugin::calculate()
         QVector<int> bad_areas;
         for(int i=0; i<mean_scan_normals.size(); i++)
         {
-             if (fabs(mean_scan_normals[i])>0.3)
+             if (fabs(mean_scan_normals[i])>0.2)
              {
                  bad_areas.push_back(i);
              }
@@ -869,24 +973,54 @@ void TrajectoryGeneratorPlugin::calculate()
 
                     qInfo()<<"ANGLE: " << dif_angle;
 
+                    double incrementoX = working_distance*sin(dif_angle*M_PI/180); //Esto en la direccion perpendicular a la nueva orientación
+                    double incrementoY =  working_distance*(1-std::cos(dif_angle*M_PI/180)); //Esto en la dirección de la nueva orientación
 
-                    double desf_wd = working_distance; //mean_measurements[id_ini+(id_end-id_ini)/2];
-                    double incX, incY;
-                    calculateDisplacement(dif_angle,desf_wd,incX,incY);
-                    double alpha = (rpy_aux.y()+dif_angle) * M_PI / 180.0;
-                    double new_incX= incX*cos(alpha) + incY*sin(alpha);
-                    double new_incY= -incX*sin(alpha) + incY*cos(alpha);
 
-                    //ESTO ESTA MAAAAAL
                     QVector3D new_pos, new_rpy;
-                    new_pos = pos_mid + QVector3D(0,-new_incY, new_incX);
-                    new_rpy = rpy_aux + QVector3D(0,dif_angle,0);
+                    new_rpy = rpy_ini+ QVector3D(0,dif_angle,0);
 
-                    QVector3D diff = new_pos - _pos_sensor[j];
-                 //   if(QVector3D::dotProduct(diff, scan_dir) < 0)
-                 //   {
+                    //ESTAS COSAS AJUSTAR SEGÚN DIR_SCAN Y DIR_SENSOR
+
+                    Eigen::Vector3d direction_vector = unit_vector_from_rpy(new_rpy.x(), new_rpy.y(), new_rpy.z());
+                    QVector3D paralel_vector(direction_vector[1], direction_vector[2], direction_vector[0]);
+                    if(new_rpy.y() <= 90 && paralel_vector.z()<0) paralel_vector.setZ(-paralel_vector.z());
+                    if(new_rpy.y() > 90 && paralel_vector.z()>0) paralel_vector.setZ(-paralel_vector.z());
+                    if(paralel_vector.y()>0)paralel_vector.setY(-paralel_vector.y());
+
+                    Eigen::Vector3d perpendicular_vector_aux = perpendicular_vector_from_rpy(new_rpy.x(), new_rpy.y(), new_rpy.z());
+
+                    QVector3D perp_vector(perpendicular_vector_aux[1], perpendicular_vector_aux[2], perpendicular_vector_aux[0]);
+                    if(perp_vector.y()>0)perp_vector.setY(-perp_vector.y());
+                    if(perp_vector.z()>0 && paralel_vector.z()>0) perp_vector.setZ(-perp_vector.z());
+                    if(perp_vector.z()<0 && paralel_vector.z()<0) perp_vector.setZ(-perp_vector.z());
+
+
+                    qInfo() << "Perpendicular vector: " << perp_vector ;
+                    qInfo() << "Direction vector: " << paralel_vector ;
+
+                     new_pos = pos_ini + fabs(incrementoX)*perp_vector
+                                       + fabs(incrementoY)*paralel_vector;
+
+
+                    if(new_rpy.z() !=0 )
+                    {
+                        new_rpy.setY(180-rpy_aux.y());
+                        new_rpy.setZ(0);
+                    }
+                    if(new_rpy.x() !=0 )
+                    {
+                        new_rpy.setX(0);
+                    }
+
                         _pos_sensor[j]=new_pos;
                         _rpy_sensor[j]=new_rpy;
+
+                        new_pos = pos_end + fabs(incrementoX)*perp_vector
+                                          + fabs(incrementoY)*paralel_vector;
+                        new_rpy = rpy_end+ QVector3D(0,dif_angle,0);
+                        _pos_sensor[j+1]=new_pos;
+                        _rpy_sensor[j+1]=new_rpy;
                  //   }
                     break;
 
