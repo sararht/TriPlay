@@ -20,6 +20,7 @@ double deg2rad(double degrees) {
     return degrees * M_PI / 180.0;
 }
 
+
 // Función para calcular la matriz de rotación a partir de los ángulos RPY
 Eigen::Matrix3d rpy_to_rotation_matrix(double roll, double pitch, double yaw) {
     // Convertir ángulos a radianes
@@ -253,24 +254,6 @@ QVector<int> findNeighborsInRadius(const QVector<QVector3D>& pointCloud, const Q
 
     return neighbors;
 }
-//float findMinExcludingZero(const QVector<float>& values) {
-//    float minNonZero = std::numeric_limits<float>::max();  // Inicializar con un valor grande
-//    bool foundNonZero = false;
-
-//    for (float value : values) {
-//        if (value != 0) {
-//            foundNonZero = true;
-//            minNonZero = std::min(minNonZero, value);
-//        }
-//    }
-
-//    if (foundNonZero) {
-//        return minNonZero;
-//    } else {
-//        // Todos los valores son 0
-//        return 0.0;  // O algún otro valor predeterminado según tus necesidades
-//    }
-//}
 
 void findMinMaxExcludingZero(const QVector<QVector<float>>& values, float& min_result, float& max_result) {
     float minNonZero = std::numeric_limits<float>::max();  // Inicializar con un valor grande
@@ -303,6 +286,79 @@ void calculateDisplacement(double angle_deg, double distance, double& displaceme
     displacementX = distance * sin(angle_deg / 180.0 * M_PI);
     displacementY = distance * (1 - cos(angle_deg / 180.0 * M_PI));
 }
+
+
+void updatePosFromDifAngle(QVector3D pos_ini, QVector3D rpy_ini, QVector3D rpy_aux, QVector3D scan_dir, QVector3D normal_sensor, QVector3D surface_normal, double max_angle, double working_distance, QVector3D &pos_updated, QVector3D &rpy_updated)
+{
+    double dot_product = QVector3D::dotProduct(normal_sensor,surface_normal.normalized());
+    double angle=std::acos(dot_product);
+    double angle_degrees = (angle*(180.0 / M_PI));
+    if (QVector3D::dotProduct(scan_dir,surface_normal.normalized()) < 0) //ESTO CAMBIARLO SEGÚN LA DIRECCIÓN DE ESCANEO!!
+        angle_degrees *= -1;
+
+    double dif_angle =-(rpy_aux.y() - (90+angle_degrees));
+    qInfo()<<"FUNC: ANGLE: " << dif_angle;
+
+    if(dif_angle>max_angle)dif_angle=max_angle;
+    else if(dif_angle<-max_angle)dif_angle=-max_angle;
+
+
+
+    double incrementoX = working_distance*sin(dif_angle*M_PI/180); //Esto en la direccion perpendicular a la nueva orientación
+    double incrementoY =  working_distance*(1-std::cos(dif_angle*M_PI/180)); //Esto en la dirección de la nueva orientación
+
+    rpy_updated = rpy_ini+ QVector3D(0,dif_angle,0);
+//    if(rpy_updated.z() !=0 )
+//    {
+//        rpy_updated.setY(180-rpy_updated.y());
+//        rpy_updated.setZ(0);
+//    }
+//    if(rpy_updated.x() !=0 )
+//    {
+//        rpy_updated.setX(0);
+//    }
+    qInfo() << "FUNC: RPY UPDATED" << rpy_updated;
+    qInfo() << "FUNC: normal" << surface_normal;
+
+    Eigen::Vector3d direction_vector = unit_vector_from_rpy(rpy_updated.x(), rpy_updated.y(), rpy_updated.z());
+    QVector3D paralel_vector =QVector3D(fabs(direction_vector[1]), fabs(direction_vector[2]), fabs(direction_vector[0]));
+//    if(surface_normal.x()<0)paralel_vector.setX(-paralel_vector.x());
+//    if(surface_normal.y()<0)paralel_vector.setY(-paralel_vector.y());
+//    if(surface_normal.z()<0)paralel_vector.setZ(-paralel_vector.z());
+    if(QVector3D::dotProduct(rpy_updated, normal_sensor) < 90) paralel_vector.setZ(-paralel_vector.z());
+
+    QVector3D perp_vector(0, paralel_vector.z(), paralel_vector.y());
+    //if (dif_angle<0 && perp_vector.z()>0) perp_vector*=-1;
+
+    if(QVector3D::dotProduct(rpy_updated, normal_sensor) > 90)
+    {
+        if(dif_angle>0)
+            perp_vector.setY(-perp_vector.y());
+        else
+            perp_vector.setZ(-perp_vector.z());
+    }
+    else
+    {
+        if(dif_angle<0)
+        {
+            perp_vector.setY(-perp_vector.y());
+            perp_vector.setZ(-perp_vector.z());
+        }
+
+    }
+
+
+
+    qInfo() << "FUNC:Perpendicular vector: " << perp_vector ;
+    qInfo() << "FUNC:Direction vector: " << paralel_vector ;
+
+    pos_updated = pos_ini + fabs(incrementoX)*perp_vector
+                      + fabs(incrementoY)*(paralel_vector);
+
+    qInfo() << "FUNC: " << pos_ini << " - " << pos_updated;
+
+}
+
 
 
 
@@ -563,6 +619,9 @@ void TrajectoryGeneratorPlugin::calculate()
     QVector<double> mean_scan_normals;
 
 
+
+
+
     for(int p=0; p<_traj_interpolated.size(); p++)
     {
         //--- DIFERENCIA DE NORMALES---
@@ -734,7 +793,10 @@ void TrajectoryGeneratorPlugin::calculate()
     if (!first_it)
     {
 
-        //----------------------------------------------------------------------------
+
+
+        //-------------------------------
+        bool problem = false;
         for(int i=0; i<_traj_simple.size()-1;i++)
         {
             QVector3D pos_ini=_traj_simple[i].positionXYZ;
@@ -743,12 +805,6 @@ void TrajectoryGeneratorPlugin::calculate()
             QVector3D rpy_end=_traj_simple[i+1].orientationRPY;
 
             QVector3D dif_pos= pos_end-pos_ini;
-
-            if(QVector3D::dotProduct(dif_pos, scan_dir)<20)
-            {
-                qInfo() << "SITUACIÓN 2";
-                //Ajustar ángulos para alejar las posiciones del sensor -> Rotar hacia dentro
-            }
 
             //Buscar estas posiciones en _traj_interpolated -> sacar el punto en el pointcloud
             int id_ini =0;
@@ -767,25 +823,54 @@ void TrajectoryGeneratorPlugin::calculate()
             QVector3D pos_end_scan= mean_pointcloud[id_end];
             QVector3D dif_scan = pos_end_scan - pos_ini_scan;
 
-            //qInfo()<< "DIF_SCAN: "<< dif_scan.length();
-            if(dif_scan.length() <10)
+
+            if(QVector3D::dotProduct(dif_pos, scan_dir)<20)
+            {
+                qInfo() << "SITUACIÓN 2";
+                //Ajustar ángulos para alejar las posiciones del sensor -> Rotar hacia dentro
+               // nueva_traj_simple.push_back(_traj_simple[i]);
+            }
+
+            else if(dif_scan.length() <30)
             {
                 qInfo() << "SITUACIÓN 1";
                 //Ajustar ángulos para acercar las posiciones del sensor -> Rotar hacia afuera
 
+                //¿Sustituir ambos por uno intermedio?
+                QVector3D rpy_aux = rpy_ini + (rpy_end-rpy_ini)/2;
+               // double dif_angle = QVector3D::dotProduct((new_rpy - rpy_ini),normal_sensor);
 
+                QVector3D new_pos, new_rpy;
+
+                QVector3D mean_n(0,0,0);
+                for(int j=id_ini; j<id_end; j++)
+                {
+                     mean_n += mean_normals[j];
+                }
+                mean_n = mean_n/(id_end-id_ini);
+                updatePosFromDifAngle(pos_ini,rpy_ini,rpy_aux,scan_dir,normal_sensor,mean_n,40,working_distance,new_pos,new_rpy);
+
+                qInfo() << "---POS_INI: "<< pos_ini <<" - " << rpy_ini;
+                qInfo() << "---POS_UPD: "<< new_pos <<" - " << new_rpy;
+
+                pointTraj point;
+                point.positionXYZ = new_pos;
+                point.orientationRPY = new_rpy;
+    //                nueva_traj_simple.push_back(point);
+             //   _traj_simple[i] = point;
+                qInfo() << "BORRANDO:  " << _traj_simple[i+1].positionXYZ << " / " << _traj_simple[i+1].orientationRPY;
+              //  _traj_simple.erase(_traj_simple.begin() + (i+1));
+
+               // problem =true;
             }
-
-
+            else
+            {
+              //  nueva_traj_simple.push_back(_traj_simple[i]);
+            }
 
         }
 
-
-
-
-
-
-
+        //-------------------------------
 
 
 
@@ -805,7 +890,7 @@ void TrajectoryGeneratorPlugin::calculate()
             //AQUÍ METO PUNTOS SI HAY MUCHA DISTANCIA
             //TENGO QUE MIRAR A VER LAS ZONAS SEGUN EL MAPA DE NORMALES
             //ASEGURAR QUE SIEMPRE TIENE MOVIMIENTO DE AVANCE?
-            if(diff.length()>130) //100
+            if(diff.length()>130 && !problem) //100
             {
 
                 // Si están muy separados entre sí los puntos meto un punto intermedio
@@ -836,7 +921,6 @@ void TrajectoryGeneratorPlugin::calculate()
                 mean_n = mean_n/(id_end-id_ini);
                 mean_m = mean_m/(id_end-id_ini);
 
-
                 QVector3D rpy_aux = _traj_interpolated[id_mid].orientationRPY;
                 if(rpy_aux.z() !=0 )
                 {
@@ -848,65 +932,31 @@ void TrajectoryGeneratorPlugin::calculate()
                     rpy_aux.setX(0);
                 }
 
-//                double angle_aux = 90-rpy_aux.y();
-//                if(angle_aux<0)angle_aux*=-1;
-//                normal_sensor = QVector3D(0,cos(angle_aux/180*M_PI), sin(angle_aux/180*M_PI));
-
-//                if (QVector3D::dotProduct(scan_dir,mean_n.normalized()) < 0) //ESTO CAMBIARLO SEGÚN LA DIRECCIÓN DE ESCANEO!!
-//                {
-//                    normal_sensor.setZ(-normal_sensor.z());
-//                }
-
-//                double desf_wd = working_distance - mean_m;
-
-//                double dot_product = QVector3D::dotProduct(normal_sensor,mean_n.normalized());
-//                double angle=std::acos(dot_product);
-//                double angle_degrees = (angle*(180.0 / M_PI));
-
-//                if (QVector3D::dotProduct(scan_dir,mean_n.normalized()) < 0) //ESTO CAMBIARLO SEGÚN LA DIRECCIÓN DE ESCANEO!!
-//                    angle_degrees *= -1;
-
-              //  if(angle_degrees>10) angle_degrees = 10;
-             //   if(angle_degrees<10) angle_degrees = -10;
-
-                ///------
-//                double incX = working_distance*sin(angle_degrees/180*M_PI);
-//                double c = 2*working_distance*sin((angle_degrees/2)/180*M_PI);
-//                double incY = sqrt(c*c - incX*incX);
-
-//                double alpha = (rpy_aux.y()+angle_degrees) * M_PI / 180.0;
-//                double new_incX= incX*cos(alpha) + incY*sin(alpha);
-//                double new_incY= -incX*sin(alpha) + incY*cos(alpha);
 
                 normal_sensor = QVector3D(0,1,0);
+                QVector3D pos_i = _traj_interpolated[id_mid].positionXYZ;
+                QVector3D new_pos, new_rpy;
+             //   updatePosFromDifAngle(pos_i, rpy_aux, rpy_aux,scan_dir,normal_sensor,mean_n,10,working_distance,new_pos, new_rpy);
+
+
                 double dot_product = QVector3D::dotProduct(normal_sensor,mean_n.normalized());
                 double angle=std::acos(dot_product);
                 double angle_degrees = (angle*(180.0 / M_PI));
                 if (QVector3D::dotProduct(scan_dir,mean_n.normalized()) < 0) //ESTO CAMBIARLO SEGÚN LA DIRECCIÓN DE ESCANEO!!
                     angle_degrees *= -1;
 
-
                 double dif_angle =-(rpy_aux.y() - (90+angle_degrees));
                 double dif_angle_aux = -(_traj_simple[i+1].orientationRPY.y() - (90+angle_degrees));
-                //qInfo()<<"ANGLE: " << dif_angle;
 
                 if(dif_angle>10)dif_angle=10;
                 else if(dif_angle<-10)dif_angle=-10;
-
-               // qInfo()<<"ANGLE: " << dif_angle;
 
                 double incrementoX = working_distance*sin(dif_angle*M_PI/180); //Esto en la direccion perpendicular a la nueva orientación
                 double incrementoY =  working_distance*(1-std::cos(dif_angle*M_PI/180)); //Esto en la dirección de la nueva orientación
                 double desf_wd = working_distance - mean_measurements[id_mid];
 
 
-              //  double incrementoX = working_distance*sin(angle_degrees*M_PI/180); //Esto en la direccion perpendicular a la nueva orientación
-              //  double incrementoY =  working_distance*(1-std::cos(angle_degrees*M_PI/180)); //Esto en la dirección de la nueva orientación
-
-                //qInfo() <<"NORAML SENSOR: " <<normal_sensor;
-
-
-                QVector3D pos_i = _traj_interpolated[id_mid].positionXYZ;
+              //  QVector3D pos_i = _traj_interpolated[id_mid].positionXYZ;
                 QVector3D rpy_i = rpy_aux + QVector3D(0,dif_angle,0);//_traj_interpolated[id_mid].orientationRPY
 
                 Eigen::Vector3d direction_vector = unit_vector_from_rpy(rpy_i.x(), rpy_i.y(), rpy_i.z());
@@ -915,7 +965,6 @@ void TrajectoryGeneratorPlugin::calculate()
                 if(rpy_i.y() > 90 && paralel_vector.z()>0) paralel_vector.setZ(-paralel_vector.z());
                 if(paralel_vector.y()>0)paralel_vector.setY(-paralel_vector.y());
 
-              //  qInfo() <<"paralel SENSOR: " <<paralel_vector;
 
                 Eigen::Vector3d perpendicular_vector_aux = perpendicular_vector_from_rpy(rpy_i.x(), rpy_i.y(), rpy_i.z());
 
@@ -924,8 +973,6 @@ void TrajectoryGeneratorPlugin::calculate()
                 if(perp_vector.z()>0 && paralel_vector.z()>0) perp_vector.setZ(-perp_vector.z());
                 if(perp_vector.z()<0 && paralel_vector.z()<0) perp_vector.setZ(-perp_vector.z());
 
-//                pos_i.setZ(pos_i.z()+incX+desf_wd*normal_sensor.z());
-//                pos_i.setY(pos_i.y()+desf_wd*normal_sensor.y()-incY);
 
                 pos_i = pos_i + fabs(incrementoX)*perp_vector
                               + fabs(incrementoY)*paralel_vector
@@ -1012,13 +1059,9 @@ void TrajectoryGeneratorPlugin::calculate()
                 double diff_ini = (pos_ini-pos_area_ini).length();
                 double diff_end = (pos_end-pos_area_end).length();
 
-                qInfo() << "DIFS: " <<diff_ini << ", " << diff_end;
                 if((fabs(diff_ini)+fabs(diff_end))/2 <36/*diff_ini<20 && diff_end<20*/) //50 & 50
                 {
 
-                    qInfo() << "From: " <<pos_ini <<" - To: "<< pos_end;
-
-                    qInfo() << "HOLAAAAAA";
                     //POSICIÓN INICIAL---------------------------------------------------------------------
 //                    QVector3D rpy_aux = _traj_interpolated[id_ini+(id_end-id_ini)/2].orientationRPY;
                     QVector3D rpy_aux = _traj_interpolated[id_ini].orientationRPY;
@@ -1032,6 +1075,12 @@ void TrajectoryGeneratorPlugin::calculate()
                    }
                    mean_n = mean_n/4;
                     ////
+
+                   normal_sensor = QVector3D(0,1,0);
+                   QVector3D new_pos, new_rpy;
+                   updatePosFromDifAngle(pos_ini, rpy_ini, rpy_aux, scan_dir,normal_sensor,mean_n,10,working_distance,new_pos,new_rpy);
+
+/*
                     normal_sensor = QVector3D(0,1,0);
                     double dot_product = QVector3D::dotProduct(normal_sensor,mean_n.normalized());
                     double angle=std::acos(dot_product);
@@ -1051,7 +1100,7 @@ void TrajectoryGeneratorPlugin::calculate()
                     double incrementoX = working_distance*sin(dif_angle*M_PI/180); //Esto en la direccion perpendicular a la nueva orientación
                     double incrementoY =  working_distance*(1-std::cos(dif_angle*M_PI/180)); //Esto en la dirección de la nueva orientación
 
-                    QVector3D new_pos, new_rpy;
+                    //QVector3D new_pos, new_rpy;
                     new_rpy = rpy_ini+ QVector3D(0,dif_angle,0);
 
                     //ESTAS COSAS AJUSTAR SEGÚN DIR_SCAN Y DIR_SENSOR
@@ -1089,6 +1138,9 @@ void TrajectoryGeneratorPlugin::calculate()
                      new_pos = pos_ini + fabs(incrementoX)*perp_vector
                                        + fabs(incrementoY)*(-paralel_vector);
 
+                     qInfo() << "INI: " << pos_ini << " - " << new_pos;
+
+
 
                     if(new_rpy.z() !=0 )
                     {
@@ -1099,7 +1151,7 @@ void TrajectoryGeneratorPlugin::calculate()
                     {
                         new_rpy.setX(0);
                     }
-
+*/
                     _pos_sensor[j]=new_pos;
                     _rpy_sensor[j]=new_rpy;
 
@@ -1117,9 +1169,10 @@ void TrajectoryGeneratorPlugin::calculate()
                         mean_n += mean_normals[j];
                     }
                     mean_n = mean_n/4;
-                    qInfo() << "fin: MEAN NORMALS: " << mean_n;
                     ////
                     normal_sensor = QVector3D(0,1,0);
+
+                    /*
                     dot_product = QVector3D::dotProduct(normal_sensor,mean_n.normalized());
                     angle=std::acos(dot_product);
                     angle_degrees = (angle*(180.0 / M_PI));
@@ -1183,7 +1236,10 @@ void TrajectoryGeneratorPlugin::calculate()
 
                         new_pos = pos_end + fabs(incrementoX)*perp_vector
                                           + fabs(incrementoY)*(-paralel_vector);
+*/
 
+                    //Pasar RPY_AUX TAMBIÉN???
+                    updatePosFromDifAngle(pos_end,rpy_end,rpy_aux,scan_dir,normal_sensor,mean_n,10,working_distance,new_pos, new_rpy);
                         _pos_sensor[j+1]=new_pos;
                         _rpy_sensor[j+1]=new_rpy;
                  //   }
@@ -1248,6 +1304,9 @@ void TrajectoryGeneratorPlugin::calculate()
             }
 
         }
+
+        //----------------------------------------------------------------------------
+
 
 
     }
