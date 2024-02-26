@@ -482,6 +482,7 @@ void controller::getTrajectoryNodesFromFile(QVector<QVector3Dd> pos_dataTraj,QVe
 
 
     }
+    qInfo() << "---------EMIT END TRAJ------";
     emit endTrajFrom();
 
 }
@@ -813,7 +814,7 @@ void controller::getTrajectoryNodes(QVector<trajectoryNode> nodes, double vel, d
 
 
     std::cout << "Trajectory saved." << std::endl;
-
+    emit endTrajFrom();
 
 }
 

@@ -620,10 +620,11 @@ MainWindow::~MainWindow()
 
 void MainWindow::clearTrajRender()
 {
-//    if(USE_VTK_RENDER)
-//        renderer_vtk.deleteTraj();
-//    else
-//        renderer.deleteTraj();
+    if(USE_VTK_RENDER)
+        renderer_vtk.deleteTraj();
+    else
+        renderer.deleteTraj();
+    endSimulTrajGenerator=true;
 }
 
 void MainWindow::updateRender(int frame,int n_frames, sensor new_sensor)
@@ -1465,7 +1466,7 @@ void MainWindow::on_actionTrajectory_Generator_triggered()
         char **argv = new char*[1];
         argv[0]= "/home/sara/sararht/TESIS/Codigo/simulador/QT/build-simulador-Qt_5_14_2_gcc_64-Release/simulador";
         //
-        int n_iteraciones = 5;
+        int n_iteraciones = 8;
         pluginInterface->setCustomFlag(true);
 
 
@@ -1537,13 +1538,15 @@ void MainWindow::on_actionTrajectory_Generator_triggered()
 
             emit button_traj_node_clicked(nodes_load, vel, frames, fov, resolution, w_range, w_distance, uncertainty, tree, path, false);
             //Esperar a que acabe eh!!
-//            while(true)
-//            {
-
-//            }
-            std::cout << "Presiona Enter para continuar...";
-            std::string line;
-            std::getline(std::cin, line);
+            while(!endSimulTrajGenerator)
+            {
+                QCoreApplication::processEvents();
+                QThread::msleep(50);
+            }
+            endSimulTrajGenerator = false;
+//            std::cout << "Presiona Enter para continuar...";
+//            std::string line;
+//            std::getline(std::cin, line);
 
             qInfo() << "Acabó escaneo anterior";
 

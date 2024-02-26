@@ -141,6 +141,8 @@ private:
     TriPluginInterface *pluginInterface;
     bool loadPlugin(const QString &desiredPluginName);
 
+    bool endSimulTrajGenerator = false;
+
 signals:
 
     void button_traj_clicked(QVector3Dd pos_ini, QVector3Dd pos_end, QQuaternion q_ini, QQuaternion q_end, double frames, double FOV, double resolution, double w_range, double w_distance, double uncertainty,KDNode tree);
