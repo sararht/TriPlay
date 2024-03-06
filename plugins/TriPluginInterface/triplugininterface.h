@@ -18,6 +18,7 @@ public:
     virtual void setCustomFlag(bool flag) = 0;
     virtual void setPath(QString path) = 0;
     virtual void getTrajectory(QVector<QVector3D> &pos_sensor, QVector<QVector3D> &rpy_sensor, double &fov, double &vel, double &frames, int &resolution, double &uncertainty) = 0;
+    virtual double costFunction() = 0;
 
 
 

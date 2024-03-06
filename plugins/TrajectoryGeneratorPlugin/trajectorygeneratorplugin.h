@@ -31,6 +31,7 @@ public:
     virtual void setPath(QString path) override;
 
     virtual void getTrajectory(QVector<QVector3D> &pos_sensor, QVector<QVector3D> &rpy_sensor, double &fov, double &vel, double &frames, int &resolution, double &uncertainty) override;
+    virtual double costFunction() override;
 
 private:
    QVector<QVector3D> _pos_sensor;

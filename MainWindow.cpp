@@ -1447,6 +1447,8 @@ void MainWindow::on_actionGet_Trajectory_from_triggered()
 
 }
 
+//bool is()
+
 
 void MainWindow::on_actionTrajectory_Generator_triggered()
 {
@@ -1466,7 +1468,7 @@ void MainWindow::on_actionTrajectory_Generator_triggered()
         char **argv = new char*[1];
         argv[0]= "/home/sara/sararht/TESIS/Codigo/simulador/QT/build-simulador-Qt_5_14_2_gcc_64-Release/simulador";
         //
-        int n_iteraciones = 8;
+        int n_iteraciones = 4;
         pluginInterface->setCustomFlag(true);
 
 
@@ -1548,7 +1550,11 @@ void MainWindow::on_actionTrajectory_Generator_triggered()
 //            std::string line;
 //            std::getline(std::cin, line);
 
+            pluginInterface->setPath(path);
+            double CF =  pluginInterface->costFunction();
+            qInfo() << "VALOR FUNCIÓN DE COSTE: " << CF;
             qInfo() << "Acabó escaneo anterior";
+
 
        }
 
