@@ -410,7 +410,6 @@ MainWindow::MainWindow(QWidget *parent)
     ui->label_lW->setVisible(false);
 
 
-    webServer = new TcpXmlServer(5000, this);
 
     /// VTK VERSION
    // std::cout << "VTK Version: " << vtkVersion::GetVTKVersion() << std::endl;
@@ -522,8 +521,6 @@ MainWindow::MainWindow(QWidget *parent)
     sensor_model = sensor(A,roll,pitch,yaw,w_range,w_distance,n_rayos,alpha,0);
 
 
-
-
     //-----------
     //Build renderer
     if(USE_VTK_RENDER)
@@ -535,6 +532,9 @@ MainWindow::MainWindow(QWidget *parent)
     {
          ui->layout_graphics->addWidget(renderer.container_stl);
     }
+
+    webServer = new TcpXmlServer(5000, &sensor_model, &tree, &renderer_vtk, this);
+
 
     controller_.updatePolydataModel(polydata_model);
 
@@ -1459,7 +1459,7 @@ void MainWindow::on_actionTrajectory_Generator_triggered()
     {
 
         //Generar trayectoria inicial y ejecutarla!!!
-
+        //QMessageBox::information(this, "INFO", "To define ROIs, first select the area in the 3D model");
 
         QStringList arguments = qApp->arguments();
         QCoreApplication *app = QCoreApplication::instance();
@@ -1468,13 +1468,12 @@ void MainWindow::on_actionTrajectory_Generator_triggered()
         char **argv = new char*[1];
         argv[0]= "/home/sara/sararht/TESIS/Codigo/simulador/QT/build-simulador-Qt_5_14_2_gcc_64-Release/simulador";
         //
-        int n_iteraciones = 4;
+        int n_iteraciones = 5;
         pluginInterface->setCustomFlag(true);
 
 
         QMessageBox::information(this, "INFO", "Select path of first trajectory");
         QString path = QFileDialog::getExistingDirectory(this, "QFileDialog.getSaveDirectory", "");
-        path =path+"/";
 
         if (!path.isEmpty() && !path.isNull()){}
 
@@ -1483,6 +1482,39 @@ void MainWindow::on_actionTrajectory_Generator_triggered()
             qWarning() << "File not valid";
             return;
         }
+        path =path+"/";
+
+        //////////////////////////////////
+        //ROIs
+        // Creamos una ventana de mensaje
+         bool isROI = false;
+         //DESCOMENTAAAAR
+         vtkSmartPointer<vtkPolyData> polySelection;
+//         if(renderer_vtk.getPolySelection(polySelection))
+//         {
+//            isROI = true;
+//            vtkBoundingBox bounding;
+//            bounding.SetBounds(polySelection->GetBounds());
+//            double xm,xM,ym,yM,zm,zM;
+//            bounding.GetBounds(xm,xM,ym,yM,zm,zM);
+//            pluginInterface->setROIS(QVector3D(xm,ym,zm), QVector3D(xM,yM,zM));
+//         }
+
+//PIEZA ACHATADA
+//         isROI=true;
+//         double xm=-15.63, ym=27.11, zm=-379.20;
+//         double xM=11.43, yM=72.80, zM=-364.58;
+//         pluginInterface->setROIS(QVector3D(xm,ym,zm), QVector3D(xM,yM,zM));
+
+
+ //PUERTA
+//          isROI=true;
+//          double xm=415, ym=-883, zm=697;
+//          double xM=461, yM=-865, zM=702;
+//          pluginInterface->setROIS(QVector3D(xm,ym,zm), QVector3D(xM,yM,zM));
+        ////////////////////////////7777
+
+
         for(int i=0; i<n_iteraciones; i++)
         {
             //scan_finished = false;
@@ -2225,12 +2257,12 @@ void MainWindow::on_actionRemote_conexion_triggered()
 
         QVector<QVector3D> pos_sensor;
         QVector<QVector3D> rpy_sensor;
-        std::string path_global = "/home/sara/Descargas/penholder/int/";
+        std::string path_global = "/home/sara/Descargas/PRUEBAS_DENSIDAD/traj_100/new_traj/";//"/home/sara/Descargas/penholder/int/";
       //  std::string path_global = "/home/sara/Descargas/puerta_pequeña/";
 
         //std::string path = "/home/sara/Descargas/prueba/traj_sensor0" + std::to_string(id_string) +".xml";
      //   std::string path = path_global + "traj_sensor0" + std::to_string(id_string) +".xml";
-        std::string path = path_global + "step_00_traj_nueva.xml";
+        std::string path = path_global + "step_00_simple.xml";//"step_00_traj_nueva.xml";
 
         QFile file(path.c_str());
         QDomDocument xmlBOM;

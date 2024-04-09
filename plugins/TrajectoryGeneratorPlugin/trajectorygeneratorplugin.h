@@ -29,6 +29,7 @@ public:
 
     virtual void setCustomFlag(bool isFirstIteration) override;
     virtual void setPath(QString path) override;
+    virtual void setROIS(QVector3D minPosBB, QVector3D maxPosBB) override;
 
     virtual void getTrajectory(QVector<QVector3D> &pos_sensor, QVector<QVector3D> &rpy_sensor, double &fov, double &vel, double &frames, int &resolution, double &uncertainty) override;
     virtual double costFunction() override;
@@ -55,7 +56,9 @@ private:
    cv::Mat _normal_scan_image;
 
    bool _isFirstIteration;
+   bool _isROI = false;
 
+   QVector<QVector3D> _ROIs;
    QVector<pointTraj> _traj_simple_new;
    QVector<pointTraj> _traj_interpolated_new;
 

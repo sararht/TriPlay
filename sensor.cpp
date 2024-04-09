@@ -342,14 +342,26 @@ void sensor::getMeasurement(KDNode &tree, bool isMeasurement=true)
 {
 
     sensor_data.clear();
+    normal_data.clear();
     sensor_data_error.clear();
     sensor_data_points_real.clear();
     distances_data.clear();
 
+    d_intersect.clear();
+    normal_intersect.clear();
+    distances_data.clear();
+    sensor_data_points_real_error.clear();
+
     sensor_data.shrink_to_fit();
+    normal_data.shrink_to_fit();
     sensor_data_error.shrink_to_fit();
     sensor_data_points_real.shrink_to_fit();
     distances_data.shrink_to_fit();
+
+    d_intersect.shrink_to_fit();
+    normal_intersect.shrink_to_fit();
+    distances_data.shrink_to_fit();
+    sensor_data_points_real_error.shrink_to_fit();
 
     double x = range*tan(FOV/2);
     QVector3Dd B{-x,0,range};
