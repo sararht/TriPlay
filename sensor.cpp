@@ -245,24 +245,30 @@ void sensor::getMeasurementVTK(vtkSmartPointer<vtkOBBTree> tree, bool isMeasurem
 }
 
 //NO FUNCIONA----
-void sensor::getMeasurementParalell(vtkSmartPointer<vtkOBBTree> tree, bool isMeasurement=true)
+void sensor::getMeasurementParalell(KDNode &tree, bool isMeasurement=true)
 {
     sensor_data.clear();
+    normal_data.clear();
     sensor_data_error.clear();
     sensor_data_points_real.clear();
     distances_data.clear();
 
+    d_intersect.clear();
+    normal_intersect.clear();
+    distances_data.clear();
+    sensor_data_points_real_error.clear();
+
     sensor_data.shrink_to_fit();
+    normal_data.shrink_to_fit();
     sensor_data_error.shrink_to_fit();
     sensor_data_points_real.shrink_to_fit();
     distances_data.shrink_to_fit();
 
-    sensor_data.reserve(resolution);
-    sensor_data_error.reserve(resolution);
-    sensor_data_points_real.reserve(resolution);
-    distances_data.reserve(resolution);
-    normal_data.reserve(resolution);
-    sensor_data_points_real_error.reserve(resolution);
+    d_intersect.shrink_to_fit();
+    normal_intersect.shrink_to_fit();
+    distances_data.shrink_to_fit();
+    sensor_data_points_real_error.shrink_to_fit();
+
 
     double x = range*tan(FOV/2);
     QVector3Dd B{-x,0,range};
@@ -289,51 +295,103 @@ void sensor::getMeasurementParalell(vtkSmartPointer<vtkOBBTree> tree, bool isMea
     QVector3Dd origin_aux_v = rotate_point(rot_mat_trans,QVector3Dd{origin.x(),origin.y(),origin.z()});
     QVector3Dd origin_aux(-origin_aux_v.x(), -origin_aux_v.y(), -origin_aux_v.z());
 
-    double originVtk[3] = {origin.x(), origin.y(), origin.z()};
 
+    //Definimos tamaños
+    sensor_data.resize(resolution);
+    normal_data.resize(resolution);
+    sensor_data_error.resize(resolution);
+    sensor_data_points_real.resize(resolution);
+    distances_data.resize(resolution);
+    sensor_data_points_real_error.resize(resolution);
+
+
+    //---
 
     int N=resolution;
-    #pragma omp parallel for
+
+    #pragma omp parallel for private(d_intersect, normal_intersect)
     for (int id_ray=0; id_ray<N; id_ray++)
     {
-       double end[3] = {B.x() + cte_x*id_ray + origin.x(), B.y() + cte_y*id_ray + origin.y(), B.z() + cte_z*id_ray + origin.z()};
+        //Create Ray
+        Ray ray;
+        ray.origin = origin;
+        QVector3Dd aux = QVector3Dd(B.x() + cte_x*id_ray + origin.x(), B.y() + cte_y*id_ray + origin.y(), B.z() + cte_z*id_ray + origin.z());
+        ray.dir = origin*-1+aux;
 
-        vtkSmartPointer<vtkPoints> points;
-        vtkSmartPointer<vtkIdList> cellsIds;
-        if(vtkTools::getIntersectRayObbTree(tree,originVtk,end,points,cellsIds))
+
+        if (hit(&tree,ray))
         {
+            double min = d_intersect[0];
+            QVector3Dd normal = normal_intersect[0];
+//            if(d_intersect.size()==1)
+//                std::cout <<"PROBLEMAAAAA"<<std::endl;
 
-            int id_min=0;
-            double min = std::sqrt(vtkMath::Distance2BetweenPoints(originVtk, points->GetData()->GetTuple3(0)));
+            for (int j=0; j<d_intersect.size();j++)
+            {
+                if (d_intersect[j] < min)
+                {
+                    min = d_intersect[j];
+                    normal = normal_intersect[j];
+                }
+            }
 
-            QVector3Dd normal(0,1,0);
+
+            distances_data[id_ray]=(min);
+            normal_data[id_ray]=(normal);
+
+            d_intersect.clear();
+            normal_intersect.clear();
+
+            d_intersect.shrink_to_fit();
+            normal_intersect.shrink_to_fit();
+
 
             // Punto 3D
             double maxE = uncertainty*0.001/2;
             double minE = -maxE;
             double error = ((double) rand()*(maxE-minE)/(double)RAND_MAX-minE);;
-            QVector3Dd point(points->GetData()->GetTuple3(id_min)[0],points->GetData()->GetTuple3(id_min)[1],points->GetData()->GetTuple3(id_min)[2]);
+            QVector3Dd point = origin + ray.dir*min;
             QVector3Dd point_s_ = rotate_point(rot_mat_trans, QVector3Dd{point.x(), point.y(), point.z()});
             QVector3Dd point_s = QVector3Dd(point_s_.x(), point_s_.y(), point_s_.z()) + origin_aux;
 
-            distances_data[id_ray] = (min);
-            normal_data[id_ray] = (normal);
-            sensor_data[id_ray] = point_s;
-            sensor_data_points_real[id_ray] = point;
-            sensor_data_error[id_ray] = QVector3Dd(point_s.x(),point_s.y(),point_s.z()+error);
-            sensor_data_points_real_error[id_ray] = QVector3Dd(point.x(), point.y()+error, point.z());
+            if(isMeasurement && point_s.z()>range)
+            {
+                distances_data[id_ray]=(0);
+                normal_data[id_ray]=(QVector3Dd(0,0,0));
+
+                sensor_data[id_ray]=(QVector3Dd(0,0,0));
+                sensor_data_error[id_ray]=(QVector3Dd(0,0,0));
+                sensor_data_points_real[id_ray]=(QVector3Dd(0,0,0));
+                sensor_data_points_real_error[id_ray]=(QVector3Dd(0,0,0));
+
+                d_intersect.clear();
+                d_intersect.shrink_to_fit();
+                continue;
+            }
+
+
+            sensor_data[id_ray]=(point_s);
+            sensor_data_points_real[id_ray]=(point);
+            sensor_data_error[id_ray]=(QVector3Dd(point_s.x(),point_s.y(),point_s.z()+error));
+            sensor_data_points_real_error[id_ray]=(QVector3Dd(point.x(), point.y()+error, point.z()));
 
         }
 
         else
         {
-            distances_data[id_ray] = 0;
-            normal_data[id_ray] = QVector3Dd(0,0,0);
-            sensor_data[id_ray] = QVector3Dd(0,0,0);
-            sensor_data_error[id_ray] = QVector3Dd(0,0,0);
-            sensor_data_points_real[id_ray] = QVector3Dd(0,0,0);
-            sensor_data_points_real_error[id_ray] = QVector3Dd(0,0,0);
+            distances_data[id_ray]=(0);
+            normal_data[id_ray]=(QVector3Dd(0,0,0));
+
+            sensor_data[id_ray]=(QVector3Dd(0,0,0));
+            sensor_data_error[id_ray]=(QVector3Dd(0,0,0));
+            sensor_data_points_real[id_ray]=(QVector3Dd(0,0,0));
+            sensor_data_points_real_error[id_ray]=(QVector3Dd(0,0,0));
+
+            d_intersect.clear();
+            d_intersect.shrink_to_fit();
+
         }
+
     }
 
 }
@@ -390,6 +448,7 @@ void sensor::getMeasurement(KDNode &tree, bool isMeasurement=true)
 
 
     int N=resolution;
+
     for (int id_ray=0; id_ray<N; id_ray++)
     {
         //Create Ray

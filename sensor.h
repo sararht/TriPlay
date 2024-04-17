@@ -26,7 +26,7 @@ public:
     sensor(QVector3Dd origin, double roll_, double pitch_, double yaw_, double working_range_, double working_distance_, double resolution_, double FOV_, double uncertainty_);
 
     void getMeasurement(KDNode &tree, bool isMeasurement);
-    void getMeasurementParalell(vtkSmartPointer<vtkOBBTree> tree, bool isMeasurement);
+    void getMeasurementParalell(KDNode &tree, bool isMeasurement);
     void getMeasurementVTK(vtkSmartPointer<vtkOBBTree> tree, bool isMeasurement);
 
 public:

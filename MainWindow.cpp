@@ -1091,6 +1091,11 @@ void MainWindow::on_actionGet_Profile_triggered()
     sensor_model.getMeasurement(tree, true);
     std::cout <<"Time mío " << (double)(clock() - tStart2_)/CLOCKS_PER_SEC << std::endl;
 
+//    clock_t tStart_ = clock();
+//    sensor_model.getMeasurementParalell(tree, true);
+//    std::cout <<"Time parallel " << (double)(clock() - tStart_)/CLOCKS_PER_SEC << std::endl;
+
+
 //    vtkSmartPointer<vtkOBBTree> kdtree;
 //    kdtree = vtkSmartPointer<vtkOBBTree>::New();
 //    kdtree->SetDataSet(this->polydata_model);

@@ -136,6 +136,17 @@ private slots:
         }
 
         mensaje.chop(1);
+        mensaje.append(";");  // Separador entre tipos de datos
+        mensaje.append("pc_data:");
+        for (int i=0; i<_sensor_model->sensor_data.size();i++)
+        {
+            mensaje.append(QString::number(_sensor_model->sensor_data_points_real[i].x())).append(",");
+            mensaje.append(QString::number(_sensor_model->sensor_data_points_real[i].y())).append(",");
+            mensaje.append(QString::number(_sensor_model->sensor_data_points_real[i].z())).append(",");
+        }
+
+        mensaje.chop(1);
+        mensaje.append("END");
 
         qInfo() << mensaje.size();
 
