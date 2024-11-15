@@ -436,16 +436,14 @@ MainWindow::MainWindow(QWidget *parent)
 
     ///----------------------------
 
-
-
     QVector3Dd A(0,0,0);
 
     //BUILD THE TREE---------------------------------------------------------------------------------------------
 //    name_file = "/home/sara/sararht/TESIS/Codigo/modelos/PUERTA_DELANTERA_IZQ_sub.stl"; //pieza_achatada_grande2.stl"; //chapa2.stl";///pinzas/fuchosa_r.stl";//chapa2.stl" ; //PUERTA_DELANTERA_IZQ.stl
 //    name_file = "../simulador/stl_examples/PUERTA_DELANTERA_IZQ_0_3.stl";
-    name_file = "/home/sara/sararht/TESIS/Codigo/modelos/pieza_achatada_grande_90.stl";
+ //   name_file = "/home/sara/sararht/TESIS/Codigo/modelos/pieza_achatada_grande_90.stl";
  //   name_file =  "/home/sara/sararht/TESIS/Codigo/modelos/Porta rotulador 3D STL/Penholder/penholder_Chamfer003.stl";
-
+    name_file = "/home/sara/sararht/TESIS/Codigo/modelos/pieza_achatada_grande_90_alargada.stl";
     std::vector<float> coords, normals;
     std::vector<unsigned int> tris, solids;
     bool is_read = stl_reader::ReadStlFile(name_file.toStdString().c_str(),coords, normals, tris, solids);
@@ -506,11 +504,11 @@ MainWindow::MainWindow(QWidget *parent)
     //BUILD SENSOR-------------------------------------------------------
     //Parámetros sensor
     double pi=3.141592;
-    double alpha = 61.5*pi/180;
+    double alpha = 30*pi/180;
     double w_distance = 400;
     double w_range = 300;
    // double alcance = w_distance+w_range/2;
-    double n_rayos = 4096;
+    double n_rayos = 2048;
 
     A = QVector3Dd(v0[0].x(), v0[0].y()+200, v0[0].z()-100);
 
@@ -1257,7 +1255,7 @@ void MainWindow::on_actionGet_Trajectory_from_triggered()
         QDomDocument xmlBOM;
         QString suffix;
 
-        bool executeLiteral = false;
+        bool executeLiteral = false; //AQUI
         bool splitFiles = false;
 
         QString path_loadTraj = QFileDialog::getOpenFileName(this, "Load Trajectory", QDir::homePath(),"XML Files (*.xml *.si *.txt)");
@@ -1297,7 +1295,7 @@ void MainWindow::on_actionGet_Trajectory_from_triggered()
             }
         }
 
-        std::cout <<"probando" << std::endl;
+       // std::cout <<"probando" << std::endl;
 
         if (readFile && suffix=="xml")
         {
@@ -1455,9 +1453,14 @@ void MainWindow::on_actionGet_Trajectory_from_triggered()
 //bool is()
 
 
+
 void MainWindow::on_actionTrajectory_Generator_triggered()
 {
 
+
+
+    // TODO ESTO DE ABAJO ES LO DE LA TRAYECTORIA SIN RL
+    /*
     ///LOAD PLUGINS----------------
     if (!loadPlugin("libtrajectorygeneratorplugin.so")) {std::cout << "PLUGIN NOT LOADED" << std::endl;}
     else
@@ -1598,7 +1601,7 @@ void MainWindow::on_actionTrajectory_Generator_triggered()
     }
 
 
-
+*/
 
 
 
@@ -2321,4 +2324,233 @@ void MainWindow::on_actionRemote_conexion_triggered()
         //pluginInterface->start();
 
     }
+}
+
+QVector<QVector3D> extractSubPointCloud(const QVector<QVector<QVector3D>> &pointCloud, int p, int range) {
+    QVector<QVector3D> subPointCloud;
+
+    int start = std::max(0, p - range);
+    int end = std::min(pointCloud.size() - 1, p + range);
+
+    for (int i = start; i <= end; ++i) {
+        subPointCloud += pointCloud[i];
+    }
+
+    return subPointCloud;
+}
+
+
+// Función para encontrar vecinos en un radio dado
+QVector<int> findNeighborsInRadius(const QVector<QVector3D>& pointCloud, const QVector3D& center, float radius) {
+    QVector<int> neighbors;
+
+    #pragma omp parallel for
+    for (int i = 0; i < pointCloud.size(); ++i) {
+        const QVector3D& point = pointCloud[i];
+
+        if (point == QVector3D(0,0,0))
+            continue;
+
+//        float distance = std::sqrt((point.x() - center.x()) * (point.x() - center.x()) +
+//                                   (point.y() - center.y()) * (point.y() - center.y()) +
+//                                   (point.z() - center.z()) * (point.z() - center.z()));
+         float distance = (point - center).lengthSquared();
+
+        if (distance <= radius*radius) {
+            #pragma omp critical
+            {
+                 neighbors.append(i);
+            }
+        }
+
+    }
+
+    return neighbors;
+}
+static bool writeMatRaw(const QString &filename, char mode_a_or_w, const cv::Mat &m_in)
+{
+
+    char mode[]="-b";
+    char text[]="IMG_INFO";
+    mode[0]=mode_a_or_w;
+    FILE* fid = fopen(filename.toLatin1().constData(),mode);
+    if (fid == nullptr)
+    {
+        return false;
+    }
+
+    fwrite(text,1,8,fid);
+
+    int rows_coded=m_in.rows;
+    int cols_coded=m_in.cols;
+    fwrite(&rows_coded,sizeof(int),1,fid);
+    fwrite(&cols_coded,sizeof(int),1,fid);
+
+    char type[]="XXXX";
+    switch (m_in.type())
+    {
+    case CV_32FC1:
+        strcpy(type,"FL4B");
+        break;
+    case CV_32SC1:
+        strcpy(type,"SI4B");
+        break;
+    case CV_8UC1:
+        strcpy(type,"UI1B");
+        break;
+    case CV_16UC1:
+        strcpy(type,"UI2B");
+        break;
+    case CV_64FC1:
+        strcpy(type,"FL8B");
+        break;
+    case CV_64FC3:
+        strcpy(type,"F38B");
+        break;
+    case CV_32FC3:
+        strcpy(type,"F34B");
+        break;
+    case CV_64FC4:
+        strcpy(type,"F48B");
+        break;
+      case CV_32FC4:
+        strcpy(type,"F44B");
+        break;
+    default:
+        fclose(fid);
+        return false;
+    }
+
+    fwrite(type,1,4,fid);
+
+    for (int i_row=0;i_row<m_in.rows;i_row++)
+        fwrite(m_in.ptr(i_row),1,m_in.step[0],fid);
+
+    fclose(fid);
+    return true;
+
+}
+
+
+void MainWindow::calculate_density_pointcloud()
+{
+    QString path = QFileDialog::getOpenFileName(this, "Load pointcloud", QDir::homePath(),"TXT Files (*.txt)");
+    QFile file(path);
+    QVector<QVector<QVector3D>> pointCloud;
+
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+           std::cerr << "No se puede abrir el archivo." << std::endl;
+
+    QTextStream in(&file);
+    QVector3D point;
+    QVector<QVector3D> currentProfile;
+    int pointCounter = 0;
+    int n_points_per_profile = 2048;
+
+    while (!in.atEnd())
+    {
+        QString line = in.readLine();
+        QStringList coords = line.split(',');
+
+        if (coords.size() == 3) {
+            point.setX(coords[0].toFloat());
+            point.setY(coords[1].toFloat());
+            point.setZ(coords[2].toFloat());
+
+            currentProfile.append(point);
+            pointCounter++;
+
+            if (pointCounter == n_points_per_profile) {
+                pointCloud.append(currentProfile);
+                currentProfile.clear();
+                pointCounter = 0;
+            }
+        }
+    }
+
+    if (!currentProfile.isEmpty()) {
+            pointCloud.append(currentProfile);
+        }
+
+     file.close();
+
+     qInfo() << pointCloud.size() << ", " << pointCloud[0].size();
+
+
+    int range = 10;  // Rango de +/-10
+    float radio_vecindad = 3.0;
+    QVector<QVector<float>> density_map;
+
+    std::cout << "[";
+    std::cout.flush();
+    int progress = 0;
+    std::cout << progress <<"% ";
+    for(int p=0; p<pointCloud.size(); p++)
+    {
+        QVector<QVector3D> points_p = pointCloud[p];
+        QVector<float> densidades(points_p.size(), 0.0);
+
+        for(int i=0; i<points_p.size(); i++)
+        {
+           QVector3D punto_actual = points_p[i];
+           if(punto_actual == QVector3D(0,0,0))
+           {
+               densidades[i] = 0;
+               continue;
+           }
+
+           QVector<QVector3D> subPointCloud = extractSubPointCloud(pointCloud, p, range);
+           QVector<int> puntos_vecindad = findNeighborsInRadius(subPointCloud, punto_actual, radio_vecindad);
+
+           // Calcular distancias
+           float distancia_total = 0.0;
+
+           for (int j : puntos_vecindad) {
+
+               const QVector3D& vecino = subPointCloud[j];
+               float distancia = (vecino - punto_actual).length(); /*std::sqrt((vecino.x() - punto_actual.x()) * (vecino.x() - punto_actual.x()) +
+                                           (vecino.y() - punto_actual.y()) * (vecino.y() - punto_actual.y()) +
+                                           (vecino.z() - punto_actual.z()) * (vecino.z() - punto_actual.z()));*/
+               distancia_total += distancia;
+           }
+           // Calcular densidad (puedes ajustar esta función según tus necesidades)
+           float densidad_punto = puntos_vecindad.size();
+           densidades[i] = densidad_punto;
+        }
+
+        density_map.push_back(densidades);
+        int progress_aux = p*100/pointCloud.size();
+        if(progress_aux > progress)
+        {
+            progress = progress_aux;
+            std::cout << progress <<"% ";
+            std::cout.flush();
+        }
+
+
+    }
+
+    std::cout << "]" <<std::endl;
+    std::cout.flush();
+
+    //Guardar mapa de densidades-----
+    QFileInfo fileInfo(path);
+    QDir dir = fileInfo.dir();
+    cv::Mat raw_density(pointCloud.size(), n_points_per_profile, CV_64FC1);
+    for (int i=0; i<pointCloud.size();i++)
+    {
+        for (int j=0; j<n_points_per_profile; j++)
+        {
+            raw_density.at<double>(i,j) = density_map[i][j];
+        }
+    }
+    QString densityMapPath = dir.absoluteFilePath("density_map.raw");
+    writeMatRaw((densityMapPath),'w',raw_density);
+
+
+}
+
+void MainWindow::on_actionDensity_map_from_PointCloud_triggered()
+{
+    calculate_density_pointcloud();
 }

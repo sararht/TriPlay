@@ -30,14 +30,41 @@ public:
             qDebug() << "Server started on port" << port;
             _sensor_model = sensor_model;
             _tree = tree;
-            _renderer_vtk = renderer_vtk;
+            _renderer_vtk = renderer_vtk;      
         }
     }
 
 private slots:
     void onNewConnection()
     {
+        auto bbox = _tree->bbox;
+        qDebug() << bbox.minPos.toQVector3D();
+        qDebug() << bbox.maxPos.toQVector3D();
+
         QTcpSocket *socket = tcpServer->nextPendingConnection();
+//        auto bbox = _tree->bbox;
+
+//        // Envía un mensaje una vez que la conexión se ha establecido
+//         QString mensaje="";
+//        mensaje.append("bbox_min:");
+//        mensaje.append(QString::number(bbox.minPos.toQVector3D().x())).append(",");
+//        mensaje.append(QString::number(bbox.minPos.toQVector3D().y())).append(",");
+//        mensaje.append(QString::number(bbox.minPos.toQVector3D().z())).append(";");
+
+//        mensaje.append("bbox_max:");
+//        mensaje.append(QString::number(bbox.maxPos.toQVector3D().x())).append(",");
+//        mensaje.append(QString::number(bbox.maxPos.toQVector3D().y())).append(",");
+//        mensaje.append(QString::number(bbox.maxPos.toQVector3D().z()));
+
+//        mensaje.append("END");
+
+//        socket->write(mensaje.toUtf8());
+//        socket->flush(); // Asegúrate de que el mensaje se envíe de inmediato
+//        socket->waitForBytesWritten(); // Espera a que se escriban los bytes en el socket
+
+        qDebug() << "PROBANDO";
+
+
         connect(socket, &QTcpSocket::readyRead, this, [=]() { onReadyRead(socket); });
         connect(socket, &QTcpSocket::disconnected, socket, &QTcpSocket::deleteLater);
     }

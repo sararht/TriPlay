@@ -404,6 +404,10 @@ void controller::getTrajectoryNodesFromFile(QVector<QVector3Dd> pos_dataTraj,QVe
             cv::Mat raw(pos_dataTraj.size(), resolution, CV_64FC1);
             cv::Mat raw_error(pos_dataTraj.size(), resolution, CV_64FC1);
             cv::Mat raw_luminosidad = cv::Mat::zeros(pos_dataTraj.size(), resolution, CV_64FC1);
+            cv::Mat raw_normal_scan(pos_dataTraj.size(), resolution, CV_64FC1);
+            cv::Mat raw_normals(pos_dataTraj.size(), resolution, CV_64FC1);
+            cv::Mat raw_normals_sensor(pos_dataTraj.size(), resolution, CV_64FC1);
+
 
             //QVector3Dd pos_ini = pos_dataTraj[0];
             //QVector3Dd pos_end = pos_dataTraj[pos_dataTraj.size()-1];
@@ -437,22 +441,40 @@ void controller::getTrajectoryNodesFromFile(QVector<QVector3Dd> pos_dataTraj,QVe
             total_points_real_error[i] =  (new_sensor_model.sensor_data_points_real_error);
             normals[i] = new_sensor_model.normal_data;
 
+            QVector3D rpy_aux = rpy_dataTraj[i].toQVector3D();
+            if(rpy_aux.z() !=0 )
+            {
+                rpy_aux.setY(180-rpy_aux.y());
+                rpy_aux.setZ(0);
+            }
+            if(rpy_aux.x() !=0 )
+            {
+                rpy_aux.setX(0);
+            }
+            double angle_aux = 90-rpy_aux.y();
+            if(angle_aux<0)angle_aux*=-1;
+           QVector3D normal_sensor = QVector3D(0,cos(angle_aux/180*M_PI), sin(angle_aux/180*M_PI));
+
+
             for(int r=0;r<resolution;r++)
             {
                 raw.at<double>(i,r)=total_data_sensor[i][r].z()*100;
                 raw_error.at<double>(i,r)=total_data_sensor_error[i][r].z()*100;
+                raw_normals.at<double>(i,r)=normals[i][r].y();
+                raw_normals_sensor.at<double>(i,r)=normal_sensor.y();
+                if (normals[i][j].toQVector3D()==QVector3D(0,0,0))
+                    raw_normals.at<double>(i,j) = 1;
 
                 if (total_data_sensor_error[i][r].z() != 0)
                     raw_luminosidad.at<double>(i,r)=1;
             }
-
 
             emit frameDone(i, pos_dataTraj.size(),new_sensor_model);
             }
 
 
             //SAVE DATA
-            std::stringstream name, name2, name3, name4, name_raw_error, name_raw_luminosidad, nameN;
+            std::stringstream name, name2, name3, name4, name_raw_error, name_raw_luminosidad, nameN, name_raw;
            // time_t now = time(0);
             //path << "../resultados/" << std::ctime(&now);
             nameN << "/normal_data0" << 0 << ".txt";
@@ -462,6 +484,7 @@ void controller::getTrajectoryNodesFromFile(QVector<QVector3Dd> pos_dataTraj,QVe
             name4 << "/step_real_error" << 0 << ".txt";
             name_raw_error << path.toStdString() << "/step_" << std::setw(2) << std::setfill('0') << j << "_orig.raw";
             name_raw_luminosidad << path.toStdString() << "/step_" << std::setw(2) << std::setfill('0') << j << "_luminosidad.raw";
+            name_raw << path.toStdString() << "/normal_scan.raw";
 
 
             saveData(path, QString::fromStdString(nameN.str()),normals);
@@ -473,6 +496,9 @@ void controller::getTrajectoryNodesFromFile(QVector<QVector3Dd> pos_dataTraj,QVe
             writeMatRaw(QString::fromStdString(name_raw_error.str()),'w',raw_error);
             writeMatRaw(QString::fromStdString(name_raw_luminosidad.str()),'w',raw_luminosidad*20);
 
+            raw_normal_scan = raw_normals_sensor - raw_normals;
+
+            writeMatRaw(QString::fromStdString(name_raw.str()),'w',raw_normal_scan);
 
            // saveData(name.str(), total_data_sensor);
             printf("Time taken node %d: %.2fs\n", j, (double)(clock() - tStart_)/CLOCKS_PER_SEC);
@@ -510,6 +536,9 @@ void controller::getTrajectoryNodes(QVector<trajectoryNode> nodes, double vel, d
 
     cv::Mat raw_complete;
     cv::Mat raw_luminosidad_complete;
+    cv::Mat raw_normal_scan;
+    cv::Mat raw_normals;
+    cv::Mat raw_normals_sensor;
     //-----------------------------------------------------------------
 
     if (nodes.size()<2)
@@ -535,6 +564,7 @@ void controller::getTrajectoryNodes(QVector<trajectoryNode> nodes, double vel, d
             mm_leng = dist*1000.0;
             int frames_aux = dist/vel *frames;
 
+            if(frames_aux==0) frames_aux=1;
             vFrames.push_back(frames_aux);
             frames_totales = frames_totales + frames_aux; //NO VA BIEEEEEN
         }
@@ -542,6 +572,9 @@ void controller::getTrajectoryNodes(QVector<trajectoryNode> nodes, double vel, d
 
         raw_complete = cv::Mat::zeros(frames_totales, resolution, CV_64FC1);
         raw_luminosidad_complete = cv::Mat::zeros(frames_totales, resolution, CV_64FC1);
+        raw_normal_scan= cv::Mat::zeros(frames_totales, resolution, CV_64FC1);
+        raw_normals= cv::Mat::zeros(frames_totales, resolution, CV_64FC1);
+        raw_normals_sensor= cv::Mat::zeros(frames_totales, resolution, CV_64FC1);
 
 
 
@@ -671,9 +704,9 @@ void controller::getTrajectoryNodes(QVector<trajectoryNode> nodes, double vel, d
 
 
                    // emit frameDone(frames_i, frames_totales,new_sensor_model);
-                    emit frameDoneTraj(nodes, vFrames, j, frames_i, new_sensor_model);
 
-                    frames_i++;
+                 //   emit frameDoneTraj(nodes, vFrames, j, frames_i, new_sensor_model); //ESTE
+
 
                     //Comprobar si cancelar:
                     if(this->cancelling)
@@ -776,6 +809,7 @@ void controller::getTrajectoryNodes(QVector<trajectoryNode> nodes, double vel, d
     name_traj_simple << "/step_00_traj.txt";
     name_raw_complete << path.toStdString() << "/step_00_orig.raw";
     name_raw_luminosidad_complete << path.toStdString() << "/step_00_luminosidad.raw";
+    name_raw << path.toStdString() << "/normal_scan.raw";
 
 //    name_raw << path.toStdString() << "/step_" <<"_conjunto" << "_orig_no_error.raw";
 //    name_raw_error << path.toStdString() << "/step_" <<"_conjunto" << "_orig.raw";
@@ -794,11 +828,34 @@ void controller::getTrajectoryNodes(QVector<trajectoryNode> nodes, double vel, d
 
     for (int i=0; i<total_data_sensor_error_all.size();i++)
     {
+        QVector3D rpy_aux = rpy_sensor_buena_all[i].toQVector3D();
+        if(rpy_aux.z() !=0 )
+        {
+            rpy_aux.setY(180-rpy_aux.y());
+            rpy_aux.setZ(0);
+        }
+        if(rpy_aux.x() !=0 )
+        {
+            rpy_aux.setX(0);
+        }
+        double angle_aux = 90-rpy_aux.y();
+        if(angle_aux<0)angle_aux*=-1;
+       QVector3D normal_sensor = QVector3D(0,cos(angle_aux/180*M_PI), sin(angle_aux/180*M_PI));
+
+
         for(int r=0; r<resolution; r++)
         {
             raw_complete.at<double>(i,r)=total_data_sensor_error_all[i][r].z()*100;
             if (total_data_sensor_error_all[i][r].z() != 0)
                 raw_luminosidad_complete.at<double>(i,r)=1;
+
+            raw_normals.at<double>(i,r)=std::acos(normal_data_sensor_all[i][r].z())*180/M_PI;
+            raw_normals_sensor.at<double>(i,r)= 180 - rpy_aux.y();//normal_sensor.z();
+            if (normal_data_sensor_all[i][r].toQVector3D()==QVector3D(0,0,0))
+            {
+                raw_normals.at<double>(i,r) = std::acos(1)*180/M_PI;
+                raw_normals_sensor.at<double>(i,r)= std::acos(1)*180/M_PI;//normal_sensor.z();
+            }
         }
     }
 
@@ -806,6 +863,9 @@ void controller::getTrajectoryNodes(QVector<trajectoryNode> nodes, double vel, d
 
     writeMatRaw(QString::fromStdString(name_raw_complete.str()),'w',raw_complete);
     writeMatRaw(QString::fromStdString(name_raw_luminosidad_complete.str()),'w', raw_luminosidad_complete);
+    raw_normal_scan = raw_normals_sensor - raw_normals;
+
+    writeMatRaw(QString::fromStdString(name_raw.str()),'w',raw_normal_scan);
 
     //            writeMatRaw(QString::fromStdString(name_raw.str()),'w',raw);
 
@@ -813,7 +873,7 @@ void controller::getTrajectoryNodes(QVector<trajectoryNode> nodes, double vel, d
 //    writeMatRaw(QString::fromStdString(name_raw_luminosidad.str()),'w',raw_luminosidad*20);
 
 
-    std::cout << "Trajectory saved." << std::endl;
+    std::cout << "Trajectory saved...." << std::endl;
     emit endTrajFrom();
 
 }

@@ -894,6 +894,7 @@
     <addaction name="menuChange_background"/>
     <addaction name="separator"/>
     <addaction name="actionRemote_conexion"/>
+    <addaction name="actionDensity_map_from_PointCloud"/>
    </widget>
    <widget class="QMenu" name="menuCalculate">
     <property name="title">
@@ -1391,6 +1392,11 @@
    </property>
    <property name="text">
     <string>Remote conexion</string>
+   </property>
+  </action>
+  <action name="actionDensity_map_from_PointCloud">
+   <property name="text">
+    <string>Density map from PointCloud</string>
    </property>
   </action>
  </widget>

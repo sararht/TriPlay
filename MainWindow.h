@@ -228,5 +228,9 @@ private slots:
 
     void updateUi_drag(double*,double*);
     void on_actionRemote_conexion_triggered();
+
+    void calculate_density_pointcloud();
+
+    void on_actionDensity_map_from_PointCloud_triggered();
 };
 #endif // MAINWINDOW_H

@@ -238,12 +238,12 @@ void renderVTK::updateRendered(sensor sensor_model, bool isInTraj)
     double n_yaw = sensor_model.yaw; while(n_yaw>180)n_yaw=n_yaw-360; while(n_yaw<-180)n_yaw=n_yaw+360;
 
  //ESTO QUITAR---------------------
-    if(n_yaw !=0 )
-    {
-        n_pitch = 180 - n_pitch;
-        n_yaw = 0;
-    }
-    if(n_roll !=0 ) n_roll=0;
+//    if(n_yaw !=0 )
+//    {
+//        n_pitch = 180 - n_pitch;
+//        n_yaw = 0;
+//    }
+//    if(n_roll !=0 ) n_roll=0;
 //------------------------------
 
     //ASSEMBLY
@@ -252,9 +252,18 @@ void renderVTK::updateRendered(sensor sensor_model, bool isInTraj)
     {
         sensor_laser->SetOrientation(0,0,0);
         sensor_laser->RotateZ(90);
+//        sensor_laser->RotateWXYZ(n_pitch,1,0,0);
+//        sensor_laser->RotateWXYZ(n_yaw,0,1,0);
+//        sensor_laser->RotateWXYZ(n_roll,0,0,1);
+
+        sensor_laser->RotateWXYZ(n_roll,0,0,1);
         sensor_laser->RotateWXYZ(n_pitch,1,0,0);
         sensor_laser->RotateWXYZ(n_yaw,0,1,0);
-        sensor_laser->RotateWXYZ(n_roll,0,0,1);
+
+
+//        sensor_laser->RotateWXYZ(n_yaw, 0, 0, 1);   // Yaw around Z-axis
+//        sensor_laser->RotateWXYZ(n_pitch, 0, 1, 0); // Pitch around Y-axis
+//        sensor_laser->RotateWXYZ(n_roll, 1, 0, 0);  // Roll around X-axis
     }
 
 
