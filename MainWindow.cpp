@@ -435,12 +435,6 @@ MainWindow::MainWindow(QWidget *parent)
     ///----------------------------
 
     QVector3Dd A(0,0,0);
-
-    //BUILD THE TREE---------------------------------------------------------------------------------------------
-//    name_file = "/home/sara/sararht/TESIS/Codigo/modelos/PUERTA_DELANTERA_IZQ_sub.stl"; //pieza_achatada_grande2.stl"; //chapa2.stl";///pinzas/fuchosa_r.stl";//chapa2.stl" ; //PUERTA_DELANTERA_IZQ.stl
-//    name_file = "../simulador/stl_examples/PUERTA_DELANTERA_IZQ_0_3.stl";
- //   name_file = "/home/sara/sararht/TESIS/Codigo/modelos/pieza_achatada_grande_90.stl";
- //   name_file =  "/home/sara/sararht/TESIS/Codigo/modelos/Porta rotulador 3D STL/Penholder/penholder_Chamfer003.stl";
     name_file = "/home/sara/sararht/TESIS/Codigo/modelos/pieza_achatada_grande_90_alargada.stl";
     std::vector<float> coords, normals;
     std::vector<unsigned int> tris, solids;
@@ -505,17 +499,12 @@ MainWindow::MainWindow(QWidget *parent)
     double alpha = 30*pi/180;
     double w_distance = 400;
     double w_range = 300;
-   // double alcance = w_distance+w_range/2;
     double n_rayos = 2048;
-
     A = QVector3Dd(v0[0].x(), v0[0].y()+200, v0[0].z()-100);
-
     double roll = 0;
     double pitch = 90;
     double yaw = 0;
-
     sensor_model = sensor(A,roll,pitch,yaw,w_range,w_distance,n_rayos,alpha,0);
-
 
     //-----------
     //Build renderer
@@ -530,14 +519,9 @@ MainWindow::MainWindow(QWidget *parent)
     }
 
     webServer = new TcpXmlServer(5000, &sensor_model, &tree, &renderer_vtk, this);
-
-
     controller_.updatePolydataModel(polydata_model);
 
     //-------------------------
-    //renderer_vtk.startInteractor();
-    //renderer.container_axis->show();
-
 
     initSpinBoxes();
     updateSpinBoxes();
@@ -557,29 +541,19 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->workingDistanceSpinBox, SIGNAL(valueChanged(double)), this, SLOT(valuesCaracteristicsChanges()));
     connect(ui->resolutionSpinBox, SIGNAL(valueChanged(double)), this, SLOT(valuesCaracteristicsChanges()));
     connect(ui->fovSpinBox, SIGNAL(valueChanged(double)), this, SLOT(valuesCaracteristicsChanges()));
-
     connect(this,SIGNAL(button_traj_clicked(QVector3Dd,QVector3Dd,QQuaternion,QQuaternion,double,double,double,double,double,double,KDNode)), &controller_, SLOT(trajectory(QVector3Dd,QVector3Dd,QQuaternion,QQuaternion,double,double,double,double,double,double,KDNode)));
-
     connect(&controller_,SIGNAL(frameDone(int,int,sensor)),this, SLOT(updateRender(int,int,sensor)));
     connect(&controller_,SIGNAL(frameDoneTraj(QVector<trajectoryNode>,QVector<int>,int,int,sensor)),this, SLOT(frameDoneTrajUpdate(QVector<trajectoryNode>,QVector<int>,int,int,sensor)));
-
     connect(&controller_,SIGNAL(endTrajFrom()),this, SLOT(clearTrajRender()));
-
     connect(this,SIGNAL(button_traj_node_clicked(QVector<trajectoryNode>,double,double,double,double,double,double,double,KDNode, QString, bool)), &controller_, SLOT(getTrajectoryNodes(QVector<trajectoryNode>,double,double,double,double,double,double,double,KDNode, QString, bool)));
-   //connect(this,SIGNAL(button_traj_generator_clicked(GenTraj_options,QVector<trajectoryNode>,QVector3D,double,double,double,double,double,double,double,KDNode, QString)), &controller_, SLOT(trajectoryGenerator4(GenTraj_options,QVector<trajectoryNode>,QVector3D,double,double,double,double,double,double,double,KDNode, QString))); //AQUIII
     connect(this,SIGNAL(button_traj_generator_clicked()), &controller_, SLOT(trajectoryGeneratorRL())); //AQUIII
-
     connect(this,SIGNAL(button_traj_node_from_clicked(QVector<QVector3Dd>,QVector<QVector3Dd>,double,double,double,double,double,KDNode, QString)), &controller_, SLOT(getTrajectoryNodesFromFile(QVector<QVector3Dd>,QVector<QVector3Dd>,double,double,double,double,double,KDNode, QString)));
-
     connect(this,SIGNAL(button_defect_clicked(QString,QString,QString)), &controller_, SLOT(insertDefect(QString,QString,QString)));
     connect(this,SIGNAL(button_defect_selection_clicked(QString,QString,QString,vtkSmartPointer<vtkPolyData>)), &controller_, SLOT(insertDefectSelection(QString,QString,QString,vtkSmartPointer<vtkPolyData>)));
     connect(this,SIGNAL(button_defect_selection_predefined_clicked(QString,QString,vtkSmartPointer<vtkPolyData>,QString,double,float,QString,crackDef_params*)), &controller_, SLOT(insertDefectSelectionPredefined(QString,QString,vtkSmartPointer<vtkPolyData>, QString, double, float, QString, crackDef_params*)));
-
     connect(&controller_,SIGNAL(defectInserted(QString)),this, SLOT(updateRenderAfterDefect(QString)));
     connect(&controller_,SIGNAL(defectInserted_error(QString)),this, SLOT(errorAfterDefect(QString)));
-
     connect(this,SIGNAL(button_scan_all_clicked(int,KDNode,double,double,double,double,double,double,double,QString)), &controller_, SLOT(scanAllPiece(int,KDNode,double,double,double,double,double,double,double,QString)));
-
     connect(this, SIGNAL(button_dragMode_clicked(bool, renderVTK)), &controller_, SLOT(updateDragMode(bool, renderVTK)));
     connect(&controller_, SIGNAL(updateUi(double*,double*)), this, SLOT(updateUi_drag(double*,double*)));
 
@@ -588,7 +562,6 @@ MainWindow::MainWindow(QWidget *parent)
 //            &controller_,
 //            SLOT(trajGeneratorPlugin(TriPluginInterface *plugin/*, QVector<QVector3Dd> pos_dataTraj, QVector<QVector3Dd> rpy_dataTraj, double vel, int frames, double fov, double resolution, double w_range, double w_distance, double uncertainty, KDNode tree, QString path*/))
 //            );
-
 
     thread_controller->start();
     thread_controller->setPriority(QThread::TimeCriticalPriority);
@@ -604,15 +577,11 @@ MainWindow::MainWindow(QWidget *parent)
 
     //Accept drops
     this->setAcceptDrops(true);
-
-    //controller_.trajectoryGenerator4();
-
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
-    //Connecting the signal
 }
 
 void MainWindow::clearTrajRender()
@@ -633,10 +602,6 @@ void MainWindow::updateRender(int frame,int n_frames, sensor new_sensor)
         ui->progressBar->hide();
         ui->button_stop->hide();
     }
-
-    //new_sensor.roll = new_sensor.roll;//*PI/180;
-    //new_sensor.pitch = new_sensor.pitch;//*PI/180;
-    //new_sensor.yaw = new_sensor.yaw;//*PI/180;
 
     if(USE_VTK_RENDER)
         renderer_vtk.updateRendered(new_sensor);
@@ -662,8 +627,6 @@ void MainWindow::frameDoneTrajUpdate(QVector<trajectoryNode> nodes, QVector<int>
         for (int i=id_node; i>0; i--)
             frame= frame - vFrames[i-1];
     }
-
-
 
     QVector3Dd pos_ini = nodes[id_node].pos();
     QVector3Dd pos_end = nodes[id_node+1].pos();
@@ -738,7 +701,6 @@ void MainWindow::initSpinBoxes()
     ui->uncertaintySpinBox->setValue(20);
 
 }
-
 void MainWindow::updateSpinBoxes()
 {
 
@@ -763,8 +725,6 @@ void MainWindow::updateSpinBoxes()
 
 
 }
-
-
 void MainWindow::valuesPositionChanges()
 {
     QVector3Dd new_origin(ui->xSpinBox->value(), ui->ySpinBox->value(), ui->zSpinBox->value());
@@ -776,7 +736,6 @@ void MainWindow::valuesPositionChanges()
 
 
 }
-
 void MainWindow::valuesCaracteristicsChanges()
 {
     sensor_model.updateCaracteristicsSensor(ui->workingRangeSpinBox->value(),ui->workingDistanceSpinBox->value(), ui->fovSpinBox->value()*PI/180, ui->resolutionSpinBox->value());
@@ -786,12 +745,9 @@ void MainWindow::valuesCaracteristicsChanges()
         renderer.updateRenderer(sensor_model);
 
 }
-
-
 void MainWindow::on_button_refresh_clicked(bool change = false)
 {
     //Abrir nuevo modelo
-
     std::vector<float> coords, normals;
     std::vector<unsigned int> tris, solids;
 
@@ -2035,113 +1991,111 @@ void MainWindow::calculate_density_pointcloud()
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
            std::cerr << "No se puede abrir el archivo." << std::endl;
 
-    QTextStream in(&file);
-    QVector3D point;
-    QVector<QVector3D> currentProfile;
-    int pointCounter = 0;
-    int n_points_per_profile = 2048;
-
-    while (!in.atEnd())
+    else
     {
-        QString line = in.readLine();
-        QStringList coords = line.split(',');
+        QTextStream in(&file);
+        QVector3D point;
+        QVector<QVector3D> currentProfile;
+        int pointCounter = 0;
+        int n_points_per_profile = 2048;
 
-        if (coords.size() == 3) {
-            point.setX(coords[0].toFloat());
-            point.setY(coords[1].toFloat());
-            point.setZ(coords[2].toFloat());
+        while (!in.atEnd())
+        {
+            QString line = in.readLine();
+            QStringList coords = line.split(',');
 
-            currentProfile.append(point);
-            pointCounter++;
+            if (coords.size() == 3) {
+                point.setX(coords[0].toFloat());
+                point.setY(coords[1].toFloat());
+                point.setZ(coords[2].toFloat());
 
-            if (pointCounter == n_points_per_profile) {
-                pointCloud.append(currentProfile);
-                currentProfile.clear();
-                pointCounter = 0;
+                currentProfile.append(point);
+                pointCounter++;
+
+                if (pointCounter == n_points_per_profile) {
+                    pointCloud.append(currentProfile);
+                    currentProfile.clear();
+                    pointCounter = 0;
+                }
             }
         }
-    }
 
-    if (!currentProfile.isEmpty()) {
-            pointCloud.append(currentProfile);
-        }
+        if (!currentProfile.isEmpty()) {
+                pointCloud.append(currentProfile);
+            }
 
-     file.close();
-
-     qInfo() << pointCloud.size() << ", " << pointCloud[0].size();
+         file.close();
 
 
-    int range = 10;  // Rango de +/-10
-    float radio_vecindad = 3.0;
-    QVector<QVector<float>> density_map;
+        int range = 10;  // Rango de +/-10
+        float radio_vecindad = 3.0;
+        QVector<QVector<float>> density_map;
 
-    std::cout << "[";
-    std::cout.flush();
-    int progress = 0;
-    std::cout << progress <<"% ";
-    for(int p=0; p<pointCloud.size(); p++)
-    {
-        QVector<QVector3D> points_p = pointCloud[p];
-        QVector<float> densidades(points_p.size(), 0.0);
+        QProgressBar* progressBar = new QProgressBar();
+        progressBar->setRange(0, 100); // Rango del progreso: 0 a 100
+        progressBar->setValue(0); // Inicialización
+        progressBar->show(); // Asegúrate de que se visualiza
 
-        for(int i=0; i<points_p.size(); i++)
+
+        for(int p=0; p<pointCloud.size(); p++)
         {
-           QVector3D punto_actual = points_p[i];
-           if(punto_actual == QVector3D(0,0,0))
-           {
-               densidades[i] = 0;
-               continue;
-           }
+            QVector<QVector3D> points_p = pointCloud[p];
+            QVector<float> densidades(points_p.size(), 0.0);
 
-           QVector<QVector3D> subPointCloud = extractSubPointCloud(pointCloud, p, range);
-           QVector<int> puntos_vecindad = findNeighborsInRadius(subPointCloud, punto_actual, radio_vecindad);
+            for(int i=0; i<points_p.size(); i++)
+            {
+               QVector3D punto_actual = points_p[i];
+               if(punto_actual == QVector3D(0,0,0))
+               {
+                   densidades[i] = 0;
+                   continue;
+               }
 
-           // Calcular distancias
-           float distancia_total = 0.0;
+               QVector<QVector3D> subPointCloud = extractSubPointCloud(pointCloud, p, range);
+               QVector<int> puntos_vecindad = findNeighborsInRadius(subPointCloud, punto_actual, radio_vecindad);
 
-           for (int j : puntos_vecindad) {
+               // Calcular distancias
+               float distancia_total = 0.0;
 
-               const QVector3D& vecino = subPointCloud[j];
-               float distancia = (vecino - punto_actual).length(); /*std::sqrt((vecino.x() - punto_actual.x()) * (vecino.x() - punto_actual.x()) +
-                                           (vecino.y() - punto_actual.y()) * (vecino.y() - punto_actual.y()) +
-                                           (vecino.z() - punto_actual.z()) * (vecino.z() - punto_actual.z()));*/
-               distancia_total += distancia;
-           }
-           // Calcular densidad (puedes ajustar esta función según tus necesidades)
-           float densidad_punto = puntos_vecindad.size();
-           densidades[i] = densidad_punto;
+               for (int j : puntos_vecindad) {
+
+                   const QVector3D& vecino = subPointCloud[j];
+                   float distancia = (vecino - punto_actual).length(); /*std::sqrt((vecino.x() - punto_actual.x()) * (vecino.x() - punto_actual.x()) +
+                                               (vecino.y() - punto_actual.y()) * (vecino.y() - punto_actual.y()) +
+                                               (vecino.z() - punto_actual.z()) * (vecino.z() - punto_actual.z()));*/
+                   distancia_total += distancia;
+               }
+               // Calcular densidad (puedes ajustar esta función según tus necesidades)
+               float densidad_punto = puntos_vecindad.size();
+               densidades[i] = densidad_punto;
+            }
+
+            density_map.push_back(densidades);
+
+            // Actualización de progreso
+              int progress = p * 100 / pointCloud.size();
+              progressBar->setValue(progress); // Actualiza el progreso visualmente
+              QCoreApplication::processEvents(); // Permite que la barra responda
+
+
         }
+        progressBar->close();
 
-        density_map.push_back(densidades);
-        int progress_aux = p*100/pointCloud.size();
-        if(progress_aux > progress)
+
+        //Guardar mapa de densidades-----
+        QFileInfo fileInfo(path);
+        QDir dir = fileInfo.dir();
+        cv::Mat raw_density(pointCloud.size(), n_points_per_profile, CV_64FC1);
+        for (int i=0; i<pointCloud.size();i++)
         {
-            progress = progress_aux;
-            std::cout << progress <<"% ";
-            std::cout.flush();
+            for (int j=0; j<n_points_per_profile; j++)
+            {
+                raw_density.at<double>(i,j) = density_map[i][j];
+            }
         }
-
-
+        QString densityMapPath = dir.absoluteFilePath("density_map.raw");
+        writeMatRaw((densityMapPath),'w',raw_density);
     }
-
-    std::cout << "]" <<std::endl;
-    std::cout.flush();
-
-    //Guardar mapa de densidades-----
-    QFileInfo fileInfo(path);
-    QDir dir = fileInfo.dir();
-    cv::Mat raw_density(pointCloud.size(), n_points_per_profile, CV_64FC1);
-    for (int i=0; i<pointCloud.size();i++)
-    {
-        for (int j=0; j<n_points_per_profile; j++)
-        {
-            raw_density.at<double>(i,j) = density_map[i][j];
-        }
-    }
-    QString densityMapPath = dir.absoluteFilePath("density_map.raw");
-    writeMatRaw((densityMapPath),'w',raw_density);
-
-
 }
 
 void MainWindow::on_actionDensity_map_from_PointCloud_triggered()

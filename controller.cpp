@@ -3,7 +3,6 @@
 #include <QDir>
 #include <QXmlStreamWriter>
 
-
 #include <vtkDoubleArray.h>
 #include <vtkFieldData.h>
 #include <vtkPlaneSource.h>
