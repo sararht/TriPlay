@@ -19,6 +19,8 @@ INCLUDEPATH += /usr/local/include/mimmo
 INCLUDEPATH += /usr/local/include/bitpit
 INCLUDEPATH += /usr/local/include/bitpit
 INCLUDEPATH += /usr/local/include/vtk-9.0
+INCLUDEPATH += /usr/include/python3.6
+
 #INCLUDEPATH += /usr/include/vtk-6.3
 
 #INCLUDEPATH += /usr/local/include/opencv4
@@ -41,7 +43,7 @@ LIBS += -L/usr/local/lib/ -lTKernel -lTKMath -lTKService -lTKV3d -lTKOpenGl \
 
 
 LIBS += $(shell pkg-config opencv --libs)
-
+LIBS += -L/usr/lib/python3.6/config-3.6m-x86_64-linux-gnu -lpython3.6
 #LIBS += -L/opt/ros/melodic/lib -lroscpp -lroslib -lrostime
 
 

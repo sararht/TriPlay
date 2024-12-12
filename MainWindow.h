@@ -51,6 +51,13 @@
 //#include "websocketxmlserver.h"
 #include "tcpxmlserver.h"
 
+
+#pragma push_macro("slots")
+#undef slots
+#include "Python.h"
+#pragma pop_macro("slots")
+
+
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
@@ -147,7 +154,7 @@ signals:
 
     void button_traj_clicked(QVector3Dd pos_ini, QVector3Dd pos_end, QQuaternion q_ini, QQuaternion q_end, double frames, double FOV, double resolution, double w_range, double w_distance, double uncertainty,KDNode tree);
     void button_traj_node_clicked(QVector<trajectoryNode>,double,double,double,double, double,double,double,KDNode, QString, bool);
-    void button_traj_generator_clicked(GenTraj_options,QVector<trajectoryNode>,QVector3D,double,double,double,double,double,double,double,KDNode, QString);
+    void button_traj_generator_clicked();
     void button_traj_node_from_clicked(QVector<QVector3Dd>,QVector<QVector3Dd>,double,double,double,double,double,KDNode, QString);
     void button_defect_clicked(QString file_defect, QString file_model, QString file_saving);
     void button_defect_selection_clicked(QString file_defect, QString file_model, QString file_saving, vtkSmartPointer<vtkPolyData> polydata);

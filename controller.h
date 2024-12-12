@@ -50,6 +50,7 @@ private slots:
     void trajectoryGenerator(GenTraj_options,QVector<trajectoryNode>,QVector3D,double,double,double,double,double,double,double,KDNode, QString);
     //void trajectoryGenerator2(GenTraj_options,QVector<trajectoryNode>,QVector3D,double,double,double,double,double,double,double,KDNode, QString);
     void trajectoryGenerator4(GenTraj_options,QVector<trajectoryNode>,QVector3D,double,double,double,double,double,double,double,KDNode, QString);
+    void trajectoryGeneratorRL();
 
     void trajGeneratorPlugin(TriPluginInterface *plugin);
 

@@ -1261,6 +1261,15 @@ void controller::trajGeneratorPlugin(TriPluginInterface *plugin/*,QVector<QVecto
 
 }
 
+
+
+void controller::trajectoryGeneratorRL()
+{
+    std::cout << "Generating Traj" << std::endl;
+
+}
+
+
 void controller::trajectoryGenerator4(GenTraj_options opt, QVector<trajectoryNode> nodes, QVector3D normal_plane_, double vel, double frames, double FOV, double resolution, double w_range, double w_distance, double uncertainty, KDNode tree, QString path)
 {
 
