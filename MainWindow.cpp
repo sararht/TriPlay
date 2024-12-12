@@ -109,7 +109,6 @@ void MainWindow::wdgVisualizationGuide()
 
     wdg_guideVisualization->resize(QSize(1510,310));
 }
-
 void MainWindow::wdgDefectSelection()
 {
     wdg_defect_selection = new defectSelection;
@@ -647,7 +646,7 @@ void MainWindow::updateRender(int frame,int n_frames, sensor new_sensor)
 
 void MainWindow::frameDoneTrajUpdate(QVector<trajectoryNode> nodes, QVector<int> vFrames, int id_node, int frame, sensor new_sensor)
 {
-    int n_frames = std::accumulate(vFrames.begin(), vFrames.end(), 0);
+    int n_frames = std::accumulate(vFrames.begin(), vFrames.end(), 0);   
     int frames_node = vFrames[id_node];
     float value = float((frame+1))/float(n_frames)*100.0f;
 
@@ -658,12 +657,13 @@ void MainWindow::frameDoneTrajUpdate(QVector<trajectoryNode> nodes, QVector<int>
         ui->button_stop->hide();
     }
 
-
     if(id_node>0)
     {
         for (int i=id_node; i>0; i--)
             frame= frame - vFrames[i-1];
     }
+
+
 
     QVector3Dd pos_ini = nodes[id_node].pos();
     QVector3Dd pos_end = nodes[id_node+1].pos();
@@ -691,6 +691,7 @@ void MainWindow::frameDoneTrajUpdate(QVector<trajectoryNode> nodes, QVector<int>
     QVector3Dd origin_(pos_x,pos_y,pos_z);
     QQuaternion q_ = q_i;
     sensor sensor_tmp(origin_, q_, new_sensor.working_range, new_sensor.working_distance, new_sensor.resolution, new_sensor.FOV, new_sensor.uncertainty);
+
 
     QVector3D eulers = q_.toEulerAngles();
     if(USE_VTK_RENDER)
@@ -1087,22 +1088,7 @@ void MainWindow::on_actionGet_Profile_triggered()
 
     clock_t tStart2_ = clock();
     sensor_model.getMeasurement(tree, true);
-    std::cout <<"Time mío " << (double)(clock() - tStart2_)/CLOCKS_PER_SEC << std::endl;
-
-//    clock_t tStart_ = clock();
-//    sensor_model.getMeasurementParalell(tree, true);
-//    std::cout <<"Time parallel " << (double)(clock() - tStart_)/CLOCKS_PER_SEC << std::endl;
-
-
-//    vtkSmartPointer<vtkOBBTree> kdtree;
-//    kdtree = vtkSmartPointer<vtkOBBTree>::New();
-//    kdtree->SetDataSet(this->polydata_model);
-//    kdtree->BuildLocator();
-
-//    clock_t tStart_ = clock();
-//    sensor_model.getMeasurementParalell(kdtree, true);
-//    std::cout <<"Time VTK " << (double)(clock() - tStart_)/CLOCKS_PER_SEC << std::endl;
-
+    std::cout <<"Time: " << (double)(clock() - tStart2_)/CLOCKS_PER_SEC << std::endl;
 
     plot.show();
     plot.plot(sensor_model.sensor_data);
@@ -1178,7 +1164,6 @@ void MainWindow::on_actionDefault_triggered()
     else
         renderer.changeBackgroundColor(QColor(82,87,110));
 }
-
 void MainWindow::on_actionBlack_triggered()
 {
     if (USE_VTK_RENDER)
@@ -1186,7 +1171,6 @@ void MainWindow::on_actionBlack_triggered()
     else
         renderer.changeBackgroundColor(Qt::black);
 }
-
 void MainWindow::on_actionGray_triggered()
 {
     if (USE_VTK_RENDER)
@@ -1194,7 +1178,6 @@ void MainWindow::on_actionGray_triggered()
     else
         renderer.changeBackgroundColor(Qt::gray);
 }
-
 void MainWindow::on_actionWhite_triggered()
 {
     if (USE_VTK_RENDER)
@@ -1202,7 +1185,6 @@ void MainWindow::on_actionWhite_triggered()
     else
         renderer.changeBackgroundColor(Qt::white);
 }
-
 void MainWindow::on_actionPointsWindow_triggered()
 {
     visibilityListPoints = !visibilityListPoints;
@@ -1210,15 +1192,10 @@ void MainWindow::on_actionPointsWindow_triggered()
     ui->label_lW->setVisible(visibilityListPoints);
 
 }
-
-
 void MainWindow::on_actionVisualization_Guide_triggered()
 {
     wdg_guideVisualization->show();
 }
-
-
-
 void MainWindow::on_actionInsert_Defect_Guide_triggered()
 {
     wdg_helpID->show();
@@ -1450,8 +1427,6 @@ void MainWindow::on_actionGet_Trajectory_from_triggered()
 
 }
 
-
-
 void MainWindow::on_actionTrajectory_Generator_triggered()
 {
     emit button_traj_generator_clicked();
@@ -1487,419 +1462,6 @@ void MainWindow::on_actionTrajectory_Generator_triggered()
     Py_Finalize();
 
 }
-
-
-//void MainWindow::on_actionTrajectory_Generator_triggered()
-//{
-
-
-
-//    // TODO ESTO DE ABAJO ES LO DE LA TRAYECTORIA SIN RL
-//    /*
-//    ///LOAD PLUGINS----------------
-//    if (!loadPlugin("libtrajectorygeneratorplugin.so")) {std::cout << "PLUGIN NOT LOADED" << std::endl;}
-//    else
-//    {
-
-//        //Generar trayectoria inicial y ejecutarla!!!
-//        //QMessageBox::information(this, "INFO", "To define ROIs, first select the area in the 3D model");
-
-//        QStringList arguments = qApp->arguments();
-//        QCoreApplication *app = QCoreApplication::instance();
-//        int argc = app->arguments().at(0).toInt();
-
-//        char **argv = new char*[1];
-//        argv[0]= "/home/sara/sararht/TESIS/Codigo/simulador/QT/build-simulador-Qt_5_14_2_gcc_64-Release/simulador";
-//        //
-//        int n_iteraciones = 5;
-//        pluginInterface->setCustomFlag(true);
-
-
-//        QMessageBox::information(this, "INFO", "Select path of first trajectory");
-//        QString path = QFileDialog::getExistingDirectory(this, "QFileDialog.getSaveDirectory", "");
-
-//        if (!path.isEmpty() && !path.isNull()){}
-
-//        else
-//        {
-//            qWarning() << "File not valid";
-//            return;
-//        }
-//        path =path+"/";
-
-//        //////////////////////////////////
-//        //ROIs
-//        // Creamos una ventana de mensaje
-//         bool isROI = false;
-//         //DESCOMENTAAAAR
-//         vtkSmartPointer<vtkPolyData> polySelection;
-////         if(renderer_vtk.getPolySelection(polySelection))
-////         {
-////            isROI = true;
-////            vtkBoundingBox bounding;
-////            bounding.SetBounds(polySelection->GetBounds());
-////            double xm,xM,ym,yM,zm,zM;
-////            bounding.GetBounds(xm,xM,ym,yM,zm,zM);
-////            pluginInterface->setROIS(QVector3D(xm,ym,zm), QVector3D(xM,yM,zM));
-////         }
-
-////PIEZA ACHATADA
-////         isROI=true;
-////         double xm=-15.63, ym=27.11, zm=-379.20;
-////         double xM=11.43, yM=72.80, zM=-364.58;
-////         pluginInterface->setROIS(QVector3D(xm,ym,zm), QVector3D(xM,yM,zM));
-
-
-// //PUERTA
-////          isROI=true;
-////          double xm=415, ym=-883, zm=697;
-////          double xM=461, yM=-865, zM=702;
-////          pluginInterface->setROIS(QVector3D(xm,ym,zm), QVector3D(xM,yM,zM));
-//        ////////////////////////////7777
-
-
-//        for(int i=0; i<n_iteraciones; i++)
-//        {
-//            //scan_finished = false;
-//            if (i>0)
-//              pluginInterface->setCustomFlag(false);
-
-//            qInfo() << path;
-//            pluginInterface->setPath(path);
-//            pluginInterface->precalculate();
-//            pluginInterface->calculate();
-//            pluginInterface->postcalculate();
-
-//            //Hacer el escaneo
-//            QVector<QVector3D> pos_sensor_i, rpy_sensor_i;
-//            double fov,vel, frames, uncertainty;
-//            int resolution;
-//            pluginInterface->getTrajectory(pos_sensor_i, rpy_sensor_i, fov, vel, frames, resolution, uncertainty);
-//            if(fov==0)
-//            {
-//                qInfo() << "Using data from spin boxes";
-//                vel = ui->velSpinBox->value();
-//                fov = ui->fovSpinBox->value();
-//                resolution = ui->resolutionSpinBox->value();
-//                frames = ui->fpsSpinBox->value();
-//                uncertainty = ui->uncertaintySpinBox->value();
-//            }
-
-
-//            QVector<trajectoryNode> nodes_load;
-//            QVector<QVector3Dd> pos_dataTraj;
-//            for(int id=0; id<pos_sensor_i.size();id++)
-//            {
-
-//                QQuaternion q = QQuaternion::fromEulerAngles(rpy_sensor_i[id].y(),rpy_sensor_i[id].z(),rpy_sensor_i[id].x());
-//                QVector3Dd posxyz_ = QVector3Dd(pos_sensor_i[id].x(), pos_sensor_i[id].y(), pos_sensor_i[id].z());
-//                pos_dataTraj.push_back(posxyz_);
-
-//                trajectoryNode node_aux(posxyz_,q);
-//                nodes_load.push_back(node_aux);
-//            }
-
-
-//            double w_range = ui->workingRangeSpinBox->value();
-//            double w_distance = ui->workingDistanceSpinBox->value();
-
-//            path = path + "new_traj/";
-
-//            ui->progressBar->show();
-//            ui->button_stop->show();
-
-//            if(USE_VTK_RENDER)
-//                renderer_vtk.drawTraj(pos_dataTraj);
-//            else
-//               renderer.insertTraj(pos_dataTraj);
-
-//            emit button_traj_node_clicked(nodes_load, vel, frames, fov, resolution, w_range, w_distance, uncertainty, tree, path, false);
-//            //Esperar a que acabe eh!!
-//            while(!endSimulTrajGenerator)
-//            {
-//                QCoreApplication::processEvents();
-//                QThread::msleep(50);
-//            }
-//            endSimulTrajGenerator = false;
-////            std::cout << "Presiona Enter para continuar...";
-////            std::string line;
-////            std::getline(std::cin, line);
-
-//            pluginInterface->setPath(path);
-//            double CF =  pluginInterface->costFunction();
-//            qInfo() << "VALOR FUNCIÓN DE COSTE: " << CF;
-//            qInfo() << "Acabó escaneo anterior";
-
-
-//       }
-
-//    }
-
-
-//*/
-
-
-
-
-
-
-
-
-//    /*
-//    // Select plane and axis
-
-//    QMessageBox *mbTrajGen = new QMessageBox();
-//    mbTrajGen->layout()->addWidget(wPlaneSelection);
-//    mbTrajGen->layout()->addWidget(wScanAll);
-//    mbTrajGen->addButton(QMessageBox::Ok);
-//    mbTrajGen->addButton(QMessageBox::Cancel);
-//    auto res = mbTrajGen->exec();
-
-
-//    bool XY_x=false, XY_y=false, XZ_x=false, XZ_z=false, YZ_y=false, YZ_z=false;
-
-//    if (res == QMessageBox::Ok)
-//    {
-
-//        if (b_planeXY->isChecked())
-//        {
-//            if (b_axisX->isChecked()) XY_x = true;
-//            else if (b_axisY->isChecked()) XY_y = true;
-//            else
-//            {
-//                QMessageBox::warning(this, "ERROR", "Select axis X or Y");
-//                return;
-//            }
-//        }
-//        else if (b_planeXZ->isChecked())
-//        {
-//            if (b_axisX->isChecked()) XZ_x = true;
-//            else if (b_axisZ->isChecked()) XZ_z = true;
-//            else
-//            {
-//                QMessageBox::warning(this, "ERROR", "Select axis X or Z");
-//                return;
-//            }
-//        }
-//        else if (b_planeYZ->isChecked())
-//        {
-//            if (b_axisY->isChecked())YZ_y = true;
-//            else if (b_axisZ->isChecked())YZ_z = true;
-//            else
-//            {
-//                QMessageBox::warning(this, "ERROR", "Select axis Y or Z");
-//                return;
-//            }
-//        }
-//        else
-//        {
-//            QMessageBox::warning(this, "ERROR", "Select one plane");
-//            return;
-//        }
-
-
-//        // Define trajectories according to plane and axis
-
-//        QVector<trajectoryNode> nodes_g;
-
-//        auto bbox_general = tree.bbox;
-//        auto dim = bbox_general.maxPos - bbox_general.minPos;
-//        double X_FOV = sensor_model.x_fov;
-//        double dist_solape = X_FOV/4;
-//        double width_sensor = X_FOV - dist_solape;
-//        int n_traj;
-
-//        QVector3D normal_plane;
-
-//        if (XZ_x || XZ_z)
-//        {
-//            normal_plane = QVector3D(0,1,0);
-////            double y_pos = (width_sensor/2)/tan(sensor_model.FOV/2);
-//            double y_pos = sensor_model.working_distance;
-
-//            if (XZ_z)
-//            {
-//                n_traj = ceil(abs(dim.x())/(width_sensor));
-//                std::cout << "Dims: " << dim.x() << std::endl;
-//                std::cout << "n_traj: " << n_traj << std::endl;
-//                std::cout << "width_sensor: " << width_sensor << std::endl;
-
-
-//                for (int i=0; i<n_traj; i++)
-//                {
-//                    double pos_x = ((bbox_general.minPos.x()+width_sensor/2)+i*width_sensor);
-
-////                    QVector3Dd pos_ini(pos_x, bbox_general.maxPos.y()+y_pos, bbox_general.minPos.z()-10);
-////                    QVector3Dd pos_end(pos_x, bbox_general.maxPos.y()+y_pos, bbox_general.maxPos.z()+10);
-//                    QVector3Dd pos_ini(pos_x, bbox_general.minPos.y()+y_pos, bbox_general.minPos.z()-10);
-//                    QVector3Dd pos_end(pos_x, bbox_general.minPos.y()+y_pos, bbox_general.maxPos.z()+10);
-
-//                    QQuaternion q = QQuaternion::fromEulerAngles(ui->pitchSpinBox->value(), ui->yawSpinBox->value(),ui->rollSpinBox->value());
-
-//                    trajectoryNode node_aux1(pos_ini,q);
-//                    trajectoryNode node_aux2(pos_end,q);
-
-//                    nodes_g.push_back(node_aux1);
-//                    nodes_g.push_back(node_aux2);
-
-//                }
-//            }
-//            else if (XZ_x)
-//            {
-//                n_traj = ceil(abs(dim.z())/(width_sensor)); //ESTE EN EL EJE X
-//                for (int i=0; i<n_traj; i++)
-//                {
-//                    double pos_z = ((bbox_general.minPos.z()+width_sensor/2)+i*width_sensor);
-
-//                    QVector3Dd pos_ini(bbox_general.minPos.x()-10, bbox_general.maxPos.y()+y_pos, pos_z);
-//                    QVector3Dd pos_end(bbox_general.maxPos.x()+10, bbox_general.maxPos.y()+y_pos, pos_z);
-
-//                    QQuaternion q = QQuaternion::fromEulerAngles(ui->pitchSpinBox->value(), ui->yawSpinBox->value(),ui->rollSpinBox->value());
-
-//                    trajectoryNode node_aux1(pos_ini,q);
-//                    trajectoryNode node_aux2(pos_end,q);
-
-//                    nodes_g.push_back(node_aux1);
-//                    nodes_g.push_back(node_aux2);
-
-//                }
-//            }
-//        }
-
-//        else if (XY_x || XY_y)
-//        {
-//            normal_plane = QVector3D(0,0,1);
-//            double z_pos = (width_sensor/2)/tan(sensor_model.FOV/2);
-//            if (XY_x)
-//            {
-//                n_traj = ceil(abs(dim.y())/(width_sensor)); //ESTE EN EL EJE Z
-//                for (int i=0; i<n_traj; i++)
-//                {
-//                    double pos_y = ((bbox_general.minPos.y()+width_sensor/2)+i*width_sensor);
-
-//                    QVector3Dd pos_ini(bbox_general.minPos.x()-10, pos_y, bbox_general.maxPos.z()+z_pos); //maxPos, minPos ¿? Todo esto puede dar problemas en negativo :(
-//                    QVector3Dd pos_end(bbox_general.maxPos.x()+10, pos_y, bbox_general.maxPos.z()+z_pos);
-
-//                    QQuaternion q = QQuaternion::fromEulerAngles(ui->pitchSpinBox->value(), ui->yawSpinBox->value(),ui->rollSpinBox->value());
-
-//                    trajectoryNode node_aux1(pos_ini,q);
-//                    trajectoryNode node_aux2(pos_end,q);
-
-//                    nodes_g.push_back(node_aux1);
-//                    nodes_g.push_back(node_aux2);
-
-//                }
-//            }
-
-//            if (XY_y)
-//            {
-//                n_traj = ceil(abs(dim.x())/(width_sensor)); //ESTE EN EL EJE Z
-//                for (int i=0; i<n_traj; i++)
-//                {
-//                    double pos_x = ((bbox_general.minPos.y()+width_sensor/2)+i*width_sensor);
-
-//                    QVector3Dd pos_ini(pos_x, bbox_general.minPos.y()-10, bbox_general.maxPos.z()+z_pos);
-//                    QVector3Dd pos_end(pos_x, bbox_general.maxPos.y()+10, bbox_general.maxPos.z()+z_pos);
-
-//                    QQuaternion q = QQuaternion::fromEulerAngles(ui->pitchSpinBox->value(), ui->yawSpinBox->value(),ui->rollSpinBox->value());
-
-//                    trajectoryNode node_aux1(pos_ini,q);
-//                    trajectoryNode node_aux2(pos_end,q);
-
-//                    nodes_g.push_back(node_aux1);
-//                    nodes_g.push_back(node_aux2);
-
-//                }
-
-//            }
-
-//        }
-
-//        else if (YZ_y || YZ_z)
-//        {
-//            normal_plane = QVector3D(1,0,0);
-//            double x_pos = (width_sensor/2)/tan(sensor_model.FOV/2);
-//            if (YZ_y)
-//            {
-//                n_traj = ceil(abs(dim.z())/(width_sensor)); //ESTE EN EL EJE Z
-//                for (int i=0; i<n_traj; i++)
-//                {
-//                    double pos_z = ((bbox_general.minPos.y()+width_sensor/2)+i*width_sensor);
-
-//                    QVector3Dd pos_ini(bbox_general.maxPos.x()+x_pos, bbox_general.minPos.y()-10, pos_z);
-//                    QVector3Dd pos_end(bbox_general.maxPos.x()+x_pos, bbox_general.maxPos.y()+10, pos_z);
-
-//                    QQuaternion q = QQuaternion::fromEulerAngles(ui->pitchSpinBox->value(), ui->yawSpinBox->value(),ui->rollSpinBox->value());
-
-//                    trajectoryNode node_aux1(pos_ini,q);
-//                    trajectoryNode node_aux2(pos_end,q);
-
-//                    nodes_g.push_back(node_aux1);
-//                    nodes_g.push_back(node_aux2);
-
-//                }
-//            }
-
-//            if (YZ_z)
-//            {
-//                n_traj = ceil(abs(dim.y())/(width_sensor)); //ESTE EN EL EJE Z
-//                for (int i=0; i<n_traj; i++)
-//                {
-//                    double pos_y = ((bbox_general.minPos.y()+width_sensor/2)+i*width_sensor);
-
-//                    QVector3Dd pos_ini(bbox_general.maxPos.x()+x_pos, pos_y,  bbox_general.minPos.z()-10);
-//                    QVector3Dd pos_end(bbox_general.maxPos.x()+x_pos, pos_y,  bbox_general.maxPos.z()+10);
-
-//                    QQuaternion q = QQuaternion::fromEulerAngles(ui->pitchSpinBox->value(), ui->yawSpinBox->value(),ui->rollSpinBox->value());
-
-//                    trajectoryNode node_aux1(pos_ini,q);
-//                    trajectoryNode node_aux2(pos_end,q);
-
-//                    nodes_g.push_back(node_aux1);
-//                    nodes_g.push_back(node_aux2);
-
-//                }
-//            }
-//        }
-
-//       //---
-
-
-
-//        GenTraj_options opt;
-//        if (b_opt1->isChecked())
-//            opt=optMinRange;
-//        else if (b_opt2->isChecked())
-//            opt=optWDist;
-//        else
-//            opt=optMaxRange;
-
-
-//        QString path = QFileDialog::getExistingDirectory(this, "QFileDialog.getSaveDirectory", "");
-//        if (!path.isEmpty() && !path.isNull())
-//        {
-//            int frames = ui->fpsSpinBox->value();
-//            double fov = ui->fovSpinBox->value();
-//            double resolution = ui->resolutionSpinBox->value();
-//            double w_range = ui->workingRangeSpinBox->value();
-//            double w_distance = ui->workingDistanceSpinBox->value();
-//            double vel = ui->velSpinBox->value();
-//            double uncertainty = ui->uncertaintySpinBox->value();
-
-//            ui->progressBar->show();
-//            ui->button_stop->show();
-
-//            emit button_traj_generator_clicked(opt,nodes_g, normal_plane, vel, frames, fov, resolution, w_range, w_distance, uncertainty, tree, path);
-//        }
-
-//    }
-//    */
-
-//}
-
-
-//Arreglar lectura trayectoriasssss
-
 
 //Action for new toolbar
 void MainWindow::on_actionReset_View_triggered()
@@ -2002,7 +1564,6 @@ void MainWindow::waitForDefectInsertion()
     vbl->addWidget(gifLabel);
     wdg_defect->show();
 }
-
 
 void MainWindow::on_actionPredefined_defect_triggered()
 {
@@ -2277,7 +1838,6 @@ static QVector<float> fromString2(QString &str)
     return vector;
 }
 
-
 void MainWindow::on_actionRemote_conexion_triggered()
 {
     ///LOAD PLUGINS----------------
@@ -2290,7 +1850,6 @@ void MainWindow::on_actionRemote_conexion_triggered()
         int argc = app->arguments().at(0).toInt();
         char **argv = new char*[1];
         argv[0]= "/home/sara/sararht/TESIS/Codigo/simulador/QT/build-simulador-Qt_5_14_2_gcc_64-Release/simulador";
-
 
 
 

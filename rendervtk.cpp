@@ -304,13 +304,9 @@ vtkNew<vtkActor> renderVTK::drawLine(const QVector3D& start, const QVector3D& en
 void renderVTK::addNewPoint(QVector<trajectoryNode> node)
 {
 
-    //PROBLEMA CON LA ORIENTACIÓNNNN
-
     double *pos=sensor_laser->GetPosition();
     double *ori=sensor_laser->GetOrientation();
 
- //   double *pos=actor_laser->GetPosition();
- //   double *ori=actor_laser->GetOrientation();
     //LASER
     vtkNew<vtkPolyDataMapper> mapper;
     mapper->SetInputConnection(laser->GetOutputPort());
