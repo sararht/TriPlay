@@ -1386,17 +1386,12 @@ void MainWindow::on_actionGet_Trajectory_from_triggered()
 void MainWindow::on_actionTrajectory_Generator_triggered()
 {
     emit button_traj_generator_clicked();
-    // Inicializar el intérprete de Python
+    // Path to the virtual environment
+    const char* python_path = "/home/sara/python_envs/.venv_RL/bin/python3";
+
     Py_Initialize();
-
-   // Ruta al entorno virtual
-   const char* venv_path = "/home/sara/python_envs/.venv_RL";
-
-   // Configurar el entorno virtual
-   PyRun_SimpleString("import sys");
-   PyRun_SimpleString("import site");
-   std::string add_venv_path = std::string("sys.path.insert(0, '") + venv_path + "/lib/python3.9/site-packages')";
-   PyRun_SimpleString(add_venv_path.c_str());
+    std::system(". /home/sara/python_envs/.venv_RL/bin/activate");
+    std::cout << "inicio" << std::endl;
 
     // Nombre del archivo Python
     const char* filename = "/home/sara/sararht/TESIS/Codigo/reinforcementLearning/RL_DDPG.py";
