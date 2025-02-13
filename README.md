@@ -28,3 +28,8 @@ This project requires the following dependencies:
 - **LAPACK & BLAS** (for numerical computations)
 - **MPI** (for parallel computing)
 - **Python 3.6+** (for scripting and additional processing)
+- **Mimmo** (for surface mesh manipulation)
+
+## Reference
+
+Roos-Hoefgeest, S., Roos-Hoefgeest, M., Álvarez, I., & González, R. C. (2023). "Simulation of Laser Profilometer Measurements in the Presence of Speckle Using Perlin Noise". *Sensors, 23*(17), 7624. [DOI: 10.3390/s23177624](https://www.mdpi.com/1424-8220/23/17/7624)
