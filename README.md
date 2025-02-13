@@ -35,7 +35,7 @@ Roos-Hoefgeest, S., Roos-Hoefgeest, M., Álvarez, I., & González, R. C. (2023).
 
 ## Video of the experiments:
 
-[![Experiments](https://img.youtube.com/vi/pVoZRiwKARA/0.jpg)](https://youtu.be/fM0UKCZrrfI)
+[![Experiments](https://img.youtube.com/vi/fM0UKCZrrfI/0.jpg)](https://youtu.be/fM0UKCZrrfI)
 
 ## Usage
 
