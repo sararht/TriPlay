@@ -32,3 +32,11 @@ To use the simulator, the following inputs are required:
 ## Reference
 
 Roos-Hoefgeest, S., Roos-Hoefgeest, M., Álvarez, I., & González, R. C. (2023). "Simulation of Laser Profilometer Measurements in the Presence of Speckle Using Perlin Noise". *Sensors, 23*(17), 7624. [DOI: 10.3390/s23177624](https://www.mdpi.com/1424-8220/23/17/7624)
+
+## Video of the experiments:
+
+[![Experiments](https://img.youtube.com/vi/pVoZRiwKARA/0.jpg)](https://youtu.be/fM0UKCZrrfI)
+
+## Usage
+
+This project is actively under development, and we are working on creating an executable version for easier use. Stay tuned for updates!
