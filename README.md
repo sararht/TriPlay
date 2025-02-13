@@ -17,18 +17,17 @@ To use the simulator, the following inputs are required:
 - **Surface Roughness Details:** Defines the material and texture properties.
 - **Defect Type:** Configurable defect types, including dents, peaks, and cracks.
 
-## Dependencies
-This project requires the following dependencies:
-- **Qt** (for GUI and application framework)
-- **VTK (Visualization Toolkit)** (for 3D visualization and manipulation)
-- **OpenCV** (for image processing and visualization)
-- **OpenMP** (for parallel processing)
-- **ROS** (for robotic system integration, if required)
-- **OpenCASCADE** (for advanced CAD model manipulation)
-- **LAPACK & BLAS** (for numerical computations)
-- **MPI** (for parallel computing)
-- **Python 3.6+** (for scripting and additional processing)
-- **Mimmo** (for surface mesh manipulation)
+| Dependencies           |
+|------------------------|
+| Qt                    |
+| VTK                   |
+| OpenCV                |
+| OpenMP                |
+| ROS                   |
+| LAPACK & BLAS         |
+| MPI                   |
+| Mimmo                 |
+
 
 ## Reference
 
