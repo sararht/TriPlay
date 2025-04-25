@@ -1,4 +1,5 @@
-# Laser Triangulation Profilometric Sensor Simulator
+# 🔻TriPlay🔺
+## A Laser Triangulation Profilometric Sensor Simulator
 
 ![Demo animado](gif_sensor.gif)
 
