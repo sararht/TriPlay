@@ -1,5 +1,7 @@
 # Laser Triangulation Profilometric Sensor Simulator
 
+![Demo animado](gif_sensor.gif)
+
 ## Description
 This project is a simulator for laser triangulation profilometric sensors, designed to replicate real-world scanning conditions, including noise simulation (e.g., *speckle* noise using Perlin noise). The tool provides an environment to test and evaluate defect detection algorithms on industrial parts before deploying them in physical systems. 
 
